@@ -56,9 +56,16 @@
             margin-bottom: 30px;
         }
         
-        .controls-grid {
+        /*.controls-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }*/
+        .controls-grid {
+        display: grid;
+            /* Force 3 columns of equal width */
+            grid-template-columns: repeat(3, 1fr); 
             gap: 20px;
             margin-bottom: 20px;
         }
