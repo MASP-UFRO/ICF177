@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulación de Centro de Masa</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            padding: 30px;
+        }
+        
+        .controls-container {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .control-group {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .control-group h3 {
+            color: #667eea;
+            margin-bottom: 12px;
+            font-size: 1.1em;
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: 70px 1fr;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        label {
+            font-weight: 600;
+            color: #555;
+        }
+
+        input[type="number"] {
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .mass-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        .mass1-color { background: #ff6b6b; }
+        .mass2-color { background: #4ecdc4; }
+        .mass3-color { background: #ffd93d; }
+
+        .simulation-area {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .canvas-container {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: center;
+        }
+
+        canvas {
+            border: 3px solid #667eea;
+            border-radius: 10px;
+            display: block;
+            cursor: crosshair;
+            background: #f8f9fa;
+        }
+
+        .info-panel {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .info-box {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-box h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1em;
+        }
+
+        .info-value {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #333;
+            font-family: 'Courier New', monospace;
+        }
+
+        .buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 1em;
+            font-weight: 600;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #d0d0d0;
+            transform: translateY(-2px);
+        }
+
+        .legend {
+            display: flex;
+            gap: 20px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 2px solid #333;
+        }
+
+        .cm-legend {
+            background: #9c27b0;
+            width: 35px;
+            height: 35px;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Simulación de Centro de Masa</h1>
+            <p class="subtitle">Demostración Interactiva de Física</p>
+        </header>
+
+        <div class="main-content">
+            <div class="controls-container">
+                <div class="controls-grid">
+                    <div class="control-group">
+                        <h3><span class="mass-color mass1-color"></span>Masa 1</h3>
+                        <div class="input-row">
+                            <label>m (kg):</label>
+                            <input type="number" id="m1" value="2" step="0.1" min="0.1">
+                        </div>
+                        <div class="input-row">
+                            <label>x (m):</label>
+                            <input type="number" id="x1" value="-3" step="0.5">
+                        </div>
+                        <div class="input-row">
+                            <label>y (m):</label>
+                            <input type="number" id="y1" value="2" step="0.5">
+                        </div>
+                        <div class="input-row">
+                            <label>vx (m/s):</label>
+                            <input type="number" id="vx1" value="1" step="0.1">
+                        </div>
+                        <div class="input-row">
+                            <label>vy (m/s):</label>
+                            <input type="number" id="vy1" value="0.5" step="0.1">
+                        </div>
+                        <div class="input-row">
+                            <label>ax (m/s²):</label>
+                            <input type="number" id="ax1" value="0" step="0.1">
+                        </div>
+                        <div class="input-row">
+                            <label>ay (m/s²):</label>
+                            <input type="number" id="ay1" value="-0.5" step="0.1">
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <h3><span class="mass-color mass2-color"></span>Masa 2</h3>
+                        <div class="input-row">
+                            <label>m (kg):</label>
+                            <input type="number" id="m2" value="3" step="0.1" min="0.1">
+                        </div>
+                        <div class="input-row">
+                            <label>x (m):</label>
+                            <input type="number" id="x2" value="2" step="0.5">
+                        </div>
+                        <div class="input-row">
+                            <label>y (m):</label>
+                            <input type="number" id="y2" value="3" step="0.5">
+                        </div>
+                        <div class="input-row">
+                            <label>vx (m/s):</label>
+                            <input type="number" id="vx2" value="-0.5" step="0.1">
+                        </div>
+                        <div class="input-row">
+                            <label>vy (m/s):</label>
+                            <input type="number" id="vy2" value="-1" step="0.1">
+                        </div>
+                        <div class="input-row">
+                            <label>ax (m/s²):</label>
+                            <input type="number" id="ax2" value="0.2" step="0.1">
+                        </div>
+                        <div class="input-row">
+                            <label>ay (m/s²):</label>
+                            <input type="number" id="ay2" value="0" step="0.1">
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <h3><span class="mass-color mass3-color"></span>Masa 3</h3>
+                        <div class="input-row">
+                            <label>m (kg):</label>
+                            <input type="number" id="m3" value="1.5" step="0.1" min="0.1">
+                        </div>
+                        <div class="input-row">
+                            <label>x (m):</label>
+                            <input type="number" id="x3" value="0" step="0.5">
+                        </div>
+                        <div class="input-row">
+                            <label>y (m):</label>
+                            <input type="number" id="y3" value="-2" step="0.5">
+                        </div>
+                        <div class="input-row">
+                            <label>vx (m/s):</label>
+                            <input type="number" id="vx3" value="0.5" step="0.1">
+                        </div>
+                        <div class="input-row">
+                            <label>vy (m/s):</label>
+                            <input type="number" id="vy3" value="1.5" step="0.1">
+                        </div>
+                        <div class="input-row">
+                            <label>ax (m/s²):</label>
+                            <input type="number" id="ax3" value="-0.1" step="0.1">
+                        </div>
+                        <div class="input-row">
+                            <label>ay (m/s²):</label>
+                            <input type="number" id="ay3" value="0.3" step="0.1">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="buttons">
+                    <button class="btn-primary" onclick="toggleSimulation()">▶ Iniciar</button>
+                    <button class="btn-secondary" onclick="resetSimulation()">↻ Reiniciar</button>
+                </div>
+
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-icon mass1-color"></div>
+                        <span>Masa 1</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-icon mass2-color"></div>
+                        <span>Masa 2</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-icon mass3-color"></div>
+                        <span>Masa 3</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-icon cm-legend"></div>
+                        <span>Centro de Masa</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="simulation-area">
+                <div class="canvas-container">
+                    <canvas id="canvas" width="1000" height="700"></canvas>
+                </div>
+
+                <div class="info-panel">
+                    <h3 style="color: #667eea; margin-bottom: 20px;">Propiedades del Sistema</h3>
+                    <div class="info-grid">
+                        <div class="info-box">
+                            <h4>Tiempo</h4>
+                            <div class="info-value" id="time">0.00 s</div>
+                        </div>
+                        <div class="info-box">
+                            <h4>Masa Total</h4>
+                            <div class="info-value" id="totalMass">6.50 kg</div>
+                        </div>
+                        <div class="info-box">
+                            <h4>Posición CM</h4>
+                            <div class="info-value" id="cmPos">(0.00, 0.00) m</div>
+                        </div>
+                        <div class="info-box">
+                            <h4>Velocidad CM</h4>
+                            <div class="info-value" id="cmVel">(0.00, 0.00) m/s</div>
+                        </div>
+                        <div class="info-box">
+                            <h4>Aceleración CM</h4>
+                            <div class="info-value" id="cmAcc">(0.00, 0.00) m/s²</div>
+                        </div>
+                        <div class="info-box">
+                            <h4>Fuerza Total</h4>
+                            <div class="info-value" id="totalForce">(0.00, 0.00) N</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let isRunning = false;
+        let time = 0;
+        let animationId = null;
+        let trails = [[], [], []]; // Store position history for each mass
+        const maxTrailLength = 100;
+        
+        // Initial state storage
+        let initialState = {
+            masses: [],
+            positions: [],
+            velocities: [],
+            accelerations: []
+        };
+
+        const scale = 40; // pixels per meter
+        const originX = canvas.width / 2;
+        const originY = canvas.height / 2;
+
+        function getInputValues() {
+            return {
+                masses: [
+                    parseFloat(document.getElementById('m1').value),
+                    parseFloat(document.getElementById('m2').value),
+                    parseFloat(document.getElementById('m3').value)
+                ],
+                positions: [
+                    [parseFloat(document.getElementById('x1').value), parseFloat(document.getElementById('y1').value)],
+                    [parseFloat(document.getElementById('x2').value), parseFloat(document.getElementById('y2').value)],
+                    [parseFloat(document.getElementById('x3').value), parseFloat(document.getElementById('y3').value)]
+                ],
+                velocities: [
+                    [parseFloat(document.getElementById('vx1').value), parseFloat(document.getElementById('vy1').value)],
+                    [parseFloat(document.getElementById('vx2').value), parseFloat(document.getElementById('vy2').value)],
+                    [parseFloat(document.getElementById('vx3').value), parseFloat(document.getElementById('vy3').value)]
+                ],
+                accelerations: [
+                    [parseFloat(document.getElementById('ax1').value), parseFloat(document.getElementById('ay1').value)],
+                    [parseFloat(document.getElementById('ax2').value), parseFloat(document.getElementById('ay2').value)],
+                    [parseFloat(document.getElementById('ax3').value), parseFloat(document.getElementById('ay3').value)]
+                ]
+            };
+        }
+
+        function saveInitialState() {
+            const values = getInputValues();
+            initialState = {
+                masses: [...values.masses],
+                positions: values.positions.map(p => [...p]),
+                velocities: values.velocities.map(v => [...v]),
+                accelerations: values.accelerations.map(a => [...a])
+            };
+        }
+
+        function calculateCenterOfMass(masses, positions) {
+            const totalMass = masses.reduce((sum, m) => sum + m, 0);
+            const cmX = masses.reduce((sum, m, i) => sum + m * positions[i][0], 0) / totalMass;
+            const cmY = masses.reduce((sum, m, i) => sum + m * positions[i][1], 0) / totalMass;
+            return [cmX, cmY, totalMass];
+        }
+
+        function calculateCMVelocity(masses, velocities, totalMass) {
+            const vcmX = masses.reduce((sum, m, i) => sum + m * velocities[i][0], 0) / totalMass;
+            const vcmY = masses.reduce((sum, m, i) => sum + m * velocities[i][1], 0) / totalMass;
+            return [vcmX, vcmY];
+        }
+
+        function calculateCMAcceleration(masses, accelerations, totalMass) {
+            const acmX = masses.reduce((sum, m, i) => sum + m * accelerations[i][0], 0) / totalMass;
+            const acmY = masses.reduce((sum, m, i) => sum + m * accelerations[i][1], 0) / totalMass;
+            return [acmX, acmY];
+        }
+
+        function toCanvasCoords(x, y) {
+            return [originX + x * scale, originY - y * scale];
+        }
+
+        function drawGrid() {
+            ctx.strokeStyle = '#e0e0e0';
+            ctx.lineWidth = 1;
+
+            // Draw vertical lines
+            for (let x = 0; x <= canvas.width; x += scale) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+
+            // Draw horizontal lines
+            for (let y = 0; y <= canvas.height; y += scale) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+
+            // Draw axes
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            
+            // X-axis
+            ctx.beginPath();
+            ctx.moveTo(0, originY);
+            ctx.lineTo(canvas.width, originY);
+            ctx.stroke();
+
+            // Y-axis
+            ctx.beginPath();
+            ctx.moveTo(originX, 0);
+            ctx.lineTo(originX, canvas.height);
+            ctx.stroke();
+
+            // Axis labels
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 14px Arial';
+            ctx.fillText('x', canvas.width - 20, originY - 10);
+            ctx.fillText('y', originX + 10, 20);
+        }
+
+        function drawVector(x, y, vx, vy, color, scale_factor = 20) {
+            const [canvasX, canvasY] = toCanvasCoords(x, y);
+            const endX = canvasX + vx * scale_factor;
+            const endY = canvasY - vy * scale_factor;
+
+            ctx.strokeStyle = color;
+            ctx.fillStyle = color;
+            ctx.lineWidth = 2;
+
+            // Draw line
+            ctx.beginPath();
+            ctx.moveTo(canvasX, canvasY);
+            ctx.lineTo(endX, endY);
+            ctx.stroke();
+
+            // Draw arrowhead
+            const angle = Math.atan2(-(vy * scale_factor), vx * scale_factor);
+            const headLength = 8;
+            
+            ctx.beginPath();
+            ctx.moveTo(endX, endY);
+            ctx.lineTo(
+                endX - headLength * Math.cos(angle - Math.PI / 6),
+                endY - headLength * Math.sin(angle - Math.PI / 6)
+            );
+            ctx.lineTo(
+                endX - headLength * Math.cos(angle + Math.PI / 6),
+                endY - headLength * Math.sin(angle + Math.PI / 6)
+            );
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function drawMass(x, y, mass, color) {
+            const [canvasX, canvasY] = toCanvasCoords(x, y);
+            const radius = Math.max(8, Math.min(25, Math.sqrt(mass) * 8));
+
+            ctx.fillStyle = color;
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            
+            ctx.beginPath();
+            ctx.arc(canvasX, canvasY, radius, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.stroke();
+
+            // Draw mass value
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 12px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(mass.toFixed(1), canvasX, canvasY);
+        }
+
+        function drawTrails() {
+            const colors = ['rgba(255, 107, 107, 0.3)', 'rgba(78, 205, 196, 0.3)', 'rgba(255, 217, 61, 0.3)'];
+            
+            trails.forEach((trail, index) => {
+                if (trail.length < 2) return;
+                
+                ctx.strokeStyle = colors[index];
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                
+                const [startX, startY] = toCanvasCoords(trail[0][0], trail[0][1]);
+                ctx.moveTo(startX, startY);
+                
+                for (let i = 1; i < trail.length; i++) {
+                    const [x, y] = toCanvasCoords(trail[i][0], trail[i][1]);
+                    ctx.lineTo(x, y);
+                }
+                
+                ctx.stroke();
+            });
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawGrid();
+
+            const values = getInputValues();
+            const [cmX, cmY, totalMass] = calculateCenterOfMass(values.masses, values.positions);
+            const [vcmX, vcmY] = calculateCMVelocity(values.masses, values.velocities, totalMass);
+            const [acmX, acmY] = calculateCMAcceleration(values.masses, values.accelerations, totalMass);
+
+            // Draw trails first (behind everything else)
+            drawTrails();
+
+            // Draw velocity vectors
+            const colors = ['#ff6b6b', '#4ecdc4', '#ffd93d'];
+            values.positions.forEach((pos, i) => {
+                drawVector(pos[0], pos[1], values.velocities[i][0], values.velocities[i][1], colors[i], 30);
+            });
+
+            // Draw acceleration vectors (smaller scale)
+            values.positions.forEach((pos, i) => {
+                drawVector(pos[0], pos[1], values.accelerations[i][0], values.accelerations[i][1], '#666', 40);
+            });
+
+            // Draw masses
+            values.positions.forEach((pos, i) => {
+                drawMass(pos[0], pos[1], values.masses[i], colors[i]);
+            });
+
+            // Draw center of mass
+            const [cmCanvasX, cmCanvasY] = toCanvasCoords(cmX, cmY);
+            ctx.fillStyle = '#9c27b0';
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(cmCanvasX, cmCanvasY, 15, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.stroke();
+
+            // Draw CM cross
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(cmCanvasX - 8, cmCanvasY);
+            ctx.lineTo(cmCanvasX + 8, cmCanvasY);
+            ctx.moveTo(cmCanvasX, cmCanvasY - 8);
+            ctx.lineTo(cmCanvasX, cmCanvasY + 8);
+            ctx.stroke();
+
+            // Draw CM velocity vector
+            drawVector(cmX, cmY, vcmX, vcmY, '#9c27b0', 30);
+
+            // Update info panel
+            document.getElementById('time').textContent = time.toFixed(2) + ' s';
+            document.getElementById('totalMass').textContent = totalMass.toFixed(2) + ' kg';
+            document.getElementById('cmPos').textContent = `(${cmX.toFixed(2)}, ${cmY.toFixed(2)}) m`;
+            document.getElementById('cmVel').textContent = `(${vcmX.toFixed(2)}, ${vcmY.toFixed(2)}) m/s`;
+            document.getElementById('cmAcc').textContent = `(${acmX.toFixed(2)}, ${acmY.toFixed(2)}) m/s²`;
+            
+            const totalForceX = totalMass * acmX;
+            const totalForceY = totalMass * acmY;
+            document.getElementById('totalForce').textContent = `(${totalForceX.toFixed(2)}, ${totalForceY.toFixed(2)}) N`;
+        }
+
+        function updatePhysics(dt) {
+            // Update velocities and positions
+            for (let i = 1; i <= 3; i++) {
+                const vxInput = document.getElementById(`vx${i}`);
+                const vyInput = document.getElementById(`vy${i}`);
+                const xInput = document.getElementById(`x${i}`);
+                const yInput = document.getElementById(`y${i}`);
+                const ax = parseFloat(document.getElementById(`ax${i}`).value);
+                const ay = parseFloat(document.getElementById(`ay${i}`).value);
+
+                let vx = parseFloat(vxInput.value);
+                let vy = parseFloat(vyInput.value);
+                let x = parseFloat(xInput.value);
+                let y = parseFloat(yInput.value);
+
+                // Update velocity: v = v0 + a*dt
+                vx += ax * dt;
+                vy += ay * dt;
+
+                // Update position: x = x0 + v*dt
+                x += vx * dt;
+                y += vy * dt;
+
+                vxInput.value = vx.toFixed(3);
+                vyInput.value = vy.toFixed(3);
+                xInput.value = x.toFixed(3);
+                yInput.value = y.toFixed(3);
+                
+                // Add to trail
+                trails[i - 1].push([x, y]);
+                if (trails[i - 1].length > maxTrailLength) {
+                    trails[i - 1].shift();
+                }
+            }
+        }
+
+        function animate() {
+            if (!isRunning) return;
+
+            const dt = 0.02; // Reduced time step for slower motion (was 0.05)
+            time += dt;
+
+            updatePhysics(dt);
+            draw();
+
+            animationId = requestAnimationFrame(animate);
+        }
+
+        function toggleSimulation() {
+            const button = event.target;
+            isRunning = !isRunning;
+
+            if (isRunning) {
+                button.textContent = '⏸ Pausar';
+                button.classList.remove('btn-primary');
+                button.classList.add('btn-secondary');
+                saveInitialState();
+                animate();
+            } else {
+                button.textContent = '▶ Iniciar';
+                button.classList.remove('btn-secondary');
+                button.classList.add('btn-primary');
+                if (animationId) {
+                    cancelAnimationFrame(animationId);
+                }
+            }
+        }
+
+        function resetSimulation() {
+            isRunning = false;
+            time = 0;
+            trails = [[], [], []]; // Clear trails
+            
+            const button = document.querySelector('.btn-primary, .btn-secondary');
+            button.textContent = '▶ Iniciar';
+            button.classList.remove('btn-secondary');
+            button.classList.add('btn-primary');
+
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+
+            // Restore initial values
+            if (initialState.masses.length > 0) {
+                for (let i = 0; i < 3; i++) {
+                    document.getElementById(`m${i+1}`).value = initialState.masses[i];
+                    document.getElementById(`x${i+1}`).value = initialState.positions[i][0];
+                    document.getElementById(`y${i+1}`).value = initialState.positions[i][1];
+                    document.getElementById(`vx${i+1}`).value = initialState.velocities[i][0];
+                    document.getElementById(`vy${i+1}`).value = initialState.velocities[i][1];
+                    document.getElementById(`ax${i+1}`).value = initialState.accelerations[i][0];
+                    document.getElementById(`ay${i+1}`).value = initialState.accelerations[i][1];
+                }
+            }
+
+            draw();
+        }
+
+        // Add input listeners for real-time updates when paused
+        document.querySelectorAll('input[type="number"]').forEach(input => {
+            input.addEventListener('input', () => {
+                if (!isRunning) {
+                    draw();
+                }
+            });
+        });
+
+        // Initial draw
+        saveInitialState();
+        draw();
+    </script>
+</body>
+</html>

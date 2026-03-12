@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oscilador Masa-Resorte</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,300;0,600;1,300&family=JetBrains+Mono:wght@400;600&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f2ec;
+    --surface: #ffffff;
+    --panel: #faf8f4;
+    --border: #d8d0c4;
+    --border-strong: #b8ac9c;
+    --accent: #2563a8;
+    --accent-light: #dbeafe;
+    --danger: #c0392b;
+    --danger-light: #fde8e6;
+    --success: #166534;
+    --success-light: #dcfce7;
+    --text: #1a1612;
+    --text-mid: #5a5040;
+    --text-dim: #9a8e80;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Source Serif 4', Georgia, serif;
+    display: grid;
+    grid-template-columns: 310px 1fr;
+    grid-template-rows: 52px 1fr;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  header {
+    grid-column: 1 / -1;
+    background: var(--surface);
+    border-bottom: 2px solid var(--border-strong);
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    gap: 10px;
+  }
+  header h1 { font-weight: 600; font-size: 1.1rem; letter-spacing: 0.02em; }
+  header .sub { font-size: 0.8rem; color: var(--text-dim); font-style: italic; font-weight: 300; }
+  header .tag {
+    margin-left: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.62rem;
+    background: var(--accent-light);
+    color: var(--accent);
+    border: 1px solid #93c5fd;
+    padding: 2px 8px;
+    border-radius: 20px;
+    letter-spacing: 1px;
+  }
+
+  /* ── SIDEBAR ── */
+  aside {
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    padding: 14px 14px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .card-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-mid);
+    padding: 6px 12px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+  .card-body { padding: 10px 12px; display: flex; flex-direction: column; gap: 10px; }
+
+  .param { display: flex; flex-direction: column; gap: 4px; }
+  .param-label {
+    font-size: 0.76rem;
+    color: var(--text-mid);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .param-label .val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 100%; height: 4px;
+    background: var(--border); border-radius: 2px; outline: none; cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px; border-radius: 50%;
+    background: var(--accent); cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 1px 4px rgba(37,99,168,0.35);
+  }
+
+  .toggle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 0.78rem; color: var(--text-mid);
+    padding-bottom: 7px; border-bottom: 1px solid var(--border);
+  }
+  .toggle { position: relative; width: 36px; height: 19px; flex-shrink: 0; }
+  .toggle input { display: none; }
+  .toggle-track {
+    position: absolute; inset: 0;
+    background: var(--border); border-radius: 20px; cursor: pointer;
+    transition: background 0.2s; border: 1px solid var(--border-strong);
+  }
+  .toggle-track::after {
+    content: ''; position: absolute;
+    width: 13px; height: 13px; background: white; border-radius: 50%;
+    top: 2px; left: 2px; transition: transform 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .toggle input:checked + .toggle-track { background: var(--accent); border-color: var(--accent); }
+  .toggle input:checked + .toggle-track::after { transform: translateX(17px); }
+
+  .btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem; letter-spacing: 1px; padding: 8px 12px;
+    border-radius: 5px; cursor: pointer; width: 100%;
+    transition: all 0.15s; text-transform: uppercase; font-weight: 600;
+  }
+  .btn-primary { background: var(--accent); color: white; border: none; box-shadow: 0 2px 5px rgba(37,99,168,0.3); }
+  .btn-primary:hover { background: #1e4f8f; }
+  .btn-secondary { background: white; color: var(--text-mid); border: 1px solid var(--border-strong); margin-top: 5px; }
+  .btn-secondary:hover { background: var(--bg); }
+  .btn-warn { background: white; color: #92400e; border: 1px solid #d97706; margin-top: 5px; }
+  .btn-warn:hover { background: #fffbeb; }
+
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+  .stat { background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 6px 8px; }
+  .stat .s-label { font-family: 'JetBrains Mono', monospace; font-size: 0.57rem; color: var(--text-dim); letter-spacing: 1px; text-transform: uppercase; }
+  .stat .s-val { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--text); font-weight: 600; margin-top: 2px; }
+
+  .info-box {
+    font-size: 0.75rem; line-height: 1.5;
+    color: var(--text-mid);
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 4px; padding: 7px 9px;
+  }
+  .info-box strong { color: var(--text); font-weight: 600; }
+
+  .omega-row {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;
+    color: var(--text-mid); background: var(--bg);
+    border: 1px solid var(--border); border-radius: 4px;
+    padding: 5px 8px; text-align: center;
+  }
+
+  .badge {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.63rem;
+    letter-spacing: 1px; border-radius: 4px;
+    padding: 4px 8px; text-align: center;
+    opacity: 0; transition: opacity 0.4s;
+  }
+  .badge.active { opacity: 1; }
+  .badge-danger { color: var(--danger); background: var(--danger-light); border: 1px solid #f5b8b3; }
+  .badge-info   { color: var(--success); background: var(--success-light); border: 1px solid #86efac; }
+
+  /* ── MAIN ── */
+  main {
+    display: grid;
+    grid-template-rows: 1fr 200px;
+    overflow: hidden;
+    background: var(--bg);
+  }
+
+  .sim-area {
+    position: relative; overflow: hidden;
+    background: #f9f7f3;
+  }
+  .sim-area::before {
+    content: ''; position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(0,0,0,0.033) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,0,0,0.033) 1px, transparent 1px);
+    background-size: 30px 30px; pointer-events: none;
+  }
+  #sim-canvas { width: 100%; height: 100%; display: block; }
+
+  .chart-area { position: relative; background: var(--surface); border-top: 1px solid var(--border); }
+  .chart-header {
+    position: absolute; top: 7px; left: 14px;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.58rem;
+    color: var(--text-dim); letter-spacing: 2px; text-transform: uppercase;
+  }
+  #chart-canvas { width: 100%; height: 100%; display: block; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Oscilador Masa–Resorte</h1>
+  <span class="sub">amortiguado &amp; forzado</span>
+  <span class="tag">RK4</span>
+</header>
+
+<aside>
+  <!-- Sistema -->
+  <div class="card">
+    <div class="card-title">Parámetros del Sistema</div>
+    <div class="card-body">
+      <div class="param">
+        <div class="param-label">Masa (m) <span class="val" id="val-m">1.00 kg</span></div>
+        <input type="range" id="sl-m" min="0.1" max="5" step="0.05" value="1">
+      </div>
+      <div class="param">
+        <div class="param-label">Constante del resorte (k) <span class="val" id="val-k">10.00 N/m</span></div>
+        <input type="range" id="sl-k" min="0.5" max="50" step="0.5" value="10">
+      </div>
+      <div class="param">
+        <div class="param-label">Desplazamiento inicial (x₀) <span class="val" id="val-x0">1.00 m</span></div>
+        <input type="range" id="sl-x0" min="-3" max="3" step="0.1" value="1">
+      </div>
+    </div>
+  </div>
+
+  <!-- Amortiguamiento -->
+  <div class="card">
+    <div class="card-title">Amortiguamiento</div>
+    <div class="card-body">
+      <div class="toggle-row">
+        <span>Activar amortiguamiento</span>
+        <label class="toggle"><input type="checkbox" id="tog-damp"><span class="toggle-track"></span></label>
+      </div>
+      <div class="param">
+        <div class="param-label">Coeficiente (b) <span class="val" id="val-b">1.00 Ns/m</span></div>
+        <input type="range" id="sl-b" min="0.01" max="10" step="0.05" value="1">
+      </div>
+    </div>
+  </div>
+
+  <!-- Fuerza externa -->
+  <div class="card">
+    <div class="card-title">Fuerza Externa  F(t) = F₀ cos(ωt)</div>
+    <div class="card-body">
+      <div class="toggle-row">
+        <span>Activar fuerza</span>
+        <label class="toggle"><input type="checkbox" id="tog-force"><span class="toggle-track"></span></label>
+      </div>
+      <div class="param">
+        <div class="param-label">Amplitud (F₀) <span class="val" id="val-f0">5.00 N</span></div>
+        <input type="range" id="sl-f0" min="0.1" max="20" step="0.1" value="5">
+      </div>
+      <div class="param">
+        <div class="param-label">Frec. forzada (ω) <span class="val" id="val-fw">2.00 rad/s</span></div>
+        <input type="range" id="sl-fw" min="0.1" max="20" step="0.05" value="2">
+      </div>
+      <div class="omega-row" id="omega-row">ω₀ = 3.162 rad/s</div>
+      <div class="badge badge-danger" id="badge-res">⚡ ¡Cerca de la resonancia!</div>
+      <div class="badge badge-info"   id="badge-ss" style="margin-top:2px">✓ Estado estacionario</div>
+
+      <!-- Explicación física -->
+      <div class="info-box" id="phase-info">
+        Activa la fuerza y el amortiguamiento para ver el comportamiento transitorio vs. estacionario.
+      </div>
+    </div>
+  </div>
+
+  <!-- Lecturas -->
+  <div class="card">
+    <div class="card-title">Lecturas en Tiempo Real</div>
+    <div class="card-body">
+      <div class="stats-grid">
+        <div class="stat"><div class="s-label">Posición</div><div class="s-val" id="st-x">—</div></div>
+        <div class="stat"><div class="s-label">Velocidad</div><div class="s-val" id="st-v">—</div></div>
+        <div class="stat"><div class="s-label">E. Cinética</div><div class="s-val" id="st-ke">—</div></div>
+        <div class="stat"><div class="s-label">E. Potencial</div><div class="s-val" id="st-pe">—</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Controles -->
+  <div style="margin-top:auto">
+    <button class="btn btn-primary"   id="btn-play">▶  Iniciar</button>
+    <button class="btn btn-warn"      id="btn-skip" title="Avanzar hasta que el transitorio se haya disipado">⏩  Ir al estado estacionario</button>
+    <button class="btn btn-secondary" id="btn-reset">↺  Reiniciar</button>
+  </div>
+</aside>
+
+<main>
+  <div class="sim-area"><canvas id="sim-canvas"></canvas></div>
+  <div class="chart-area">
+    <div class="chart-header">x(t) — Desplazamiento vs Tiempo</div>
+    <canvas id="chart-canvas"></canvas>
+  </div>
+</main>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────────
+let running = false, animId = null;
+let t = 0, x = 1, v = 0;
+const dt = 0.004;
+const chartData = [];
+const MAX_PTS = 1200;
+
+let m = 1, k = 10, b = 1.0, x0 = 1;
+let dampEnabled = false, forceEnabled = false;
+let F0 = 5, fw = 2.0;
+
+// Estimate of whether we're in steady state (only meaningful when damped + forced)
+let ssTimer = 0;  // time accumulated since force / params last changed
+const SS_THRESHOLD = 0; // computed dynamically from decay rate
+
+// ── Canvases ───────────────────────────────────────────────────────────────────
+const simCanvas   = document.getElementById('sim-canvas');
+const simCtx      = simCanvas.getContext('2d');
+const chartCanvas = document.getElementById('chart-canvas');
+const chartCtx    = chartCanvas.getContext('2d');
+
+function resize() {
+  const dpr = devicePixelRatio;
+  simCanvas.width   = simCanvas.offsetWidth   * dpr;
+  simCanvas.height  = simCanvas.offsetHeight  * dpr;
+  chartCanvas.width  = chartCanvas.offsetWidth  * dpr;
+  chartCanvas.height = chartCanvas.offsetHeight * dpr;
+  drawSim(); drawChart();
+}
+window.addEventListener('resize', resize);
+setTimeout(resize, 60);
+
+// ── Bindings ───────────────────────────────────────────────────────────────────
+function bind(id, valId, setter, fmt) {
+  const el = document.getElementById(id);
+  const vl = document.getElementById(valId);
+  const update = () => { const val = parseFloat(el.value); setter(val); vl.textContent = fmt(val); };
+  el.addEventListener('input', update);
+  update();
+}
+
+bind('sl-m',  'val-m',  val => { m  = val; updateOmega(); }, val => val.toFixed(2) + ' kg');
+bind('sl-k',  'val-k',  val => { k  = val; updateOmega(); }, val => val.toFixed(2) + ' N/m');
+bind('sl-x0', 'val-x0', val => { x0 = val; if (!running) { x = x0; v = 0; updateStats(); drawSim(); drawChart(); } }, val => val.toFixed(2) + ' m');
+bind('sl-b',  'val-b',  val => { b  = val; updatePhaseInfo(); }, val => val.toFixed(2) + ' Ns/m');
+bind('sl-f0', 'val-f0', val => { F0 = val; updatePhaseInfo(); }, val => val.toFixed(2) + ' N');
+bind('sl-fw', 'val-fw', val => { fw = val; checkResonance(); updatePhaseInfo(); }, val => val.toFixed(2) + ' rad/s');
+
+document.getElementById('tog-damp').addEventListener('change',  e => { dampEnabled  = e.target.checked; updatePhaseInfo(); });
+document.getElementById('tog-force').addEventListener('change', e => { forceEnabled = e.target.checked; checkResonance(); updatePhaseInfo(); });
+
+document.getElementById('btn-play').addEventListener('click',  () => running ? stop() : start());
+document.getElementById('btn-reset').addEventListener('click', () => { stop(); resetState(); drawSim(); drawChart(); });
+document.getElementById('btn-skip').addEventListener('click',  skipToSteadyState);
+
+function updateOmega() {
+  const w0 = Math.sqrt(k / m);
+  document.getElementById('omega-row').textContent = `ω₀ = ${w0.toFixed(3)} rad/s`;
+  checkResonance();
+  updatePhaseInfo();
+}
+
+function checkResonance() {
+  if (!forceEnabled) { document.getElementById('badge-res').classList.remove('active'); return; }
+  const w0 = Math.sqrt(k / m);
+  document.getElementById('badge-res').classList.toggle('active', Math.abs(fw - w0) / w0 < 0.05);
+}
+
+// How many time-constants until transient is negligible (< 1% of initial)
+function decayTime() {
+  // Transient decays as e^(-γt) where γ = b/(2m)
+  if (!dampEnabled || b < 0.01) return Infinity;
+  const gamma = b / (2 * m);
+  return Math.log(100) / gamma;  // 99% decay
+}
+
+function steadyStateAmplitude() {
+  const w0 = Math.sqrt(k / m);
+  const bd = dampEnabled ? b : 0;
+  const denom = Math.sqrt((k - m * fw * fw) ** 2 + (bd * fw) ** 2);
+  return F0 / denom;
+}
+
+function updatePhaseInfo() {
+  const box = document.getElementById('phase-info');
+  const ssBadge = document.getElementById('badge-ss');
+
+  if (!forceEnabled) {
+    ssBadge.classList.remove('active');
+    if (!dampEnabled) {
+      box.innerHTML = 'Oscilación libre a la <strong>frecuencia natural</strong> ω₀ = √(k/m).';
+    } else {
+      box.innerHTML = 'Oscilación libre amortiguada: la amplitud decae como <strong>e<sup>−bt/2m</sup></strong> hasta que la masa se detiene.';
+    }
+    return;
+  }
+
+  const w0 = Math.sqrt(k / m);
+  const Ass = steadyStateAmplitude().toFixed(3);
+  const tDecay = decayTime();
+  const inSteadyState = dampEnabled && t > tDecay;
+
+  ssBadge.classList.toggle('active', inSteadyState);
+
+  if (!dampEnabled) {
+    if (Math.abs(fw - w0) / w0 < 0.05) {
+      box.innerHTML = 'Sin amortiguamiento en resonancia, la amplitud crece <strong>sin límite</strong> (crecimiento lineal).';
+    } else {
+      box.innerHTML = 'Sin amortiguamiento, ω₀ y ω coexisten indefinidamente — se observan <strong>pulsaciones</strong> entre ambas frecuencias. Agrega amortiguamiento para alcanzar el estado estacionario.';
+    }
+  } else {
+    const tDecayStr = isFinite(tDecay) ? tDecay.toFixed(0) + ' s' : '—';
+    box.innerHTML =
+      `El transitorio (a ω₀) decae en ≈ <strong>${tDecayStr}</strong>. ` +
+      `Después, la masa oscila únicamente a la <strong>frecuencia forzada ω = ${fw.toFixed(2)} rad/s</strong>, ` +
+      `con amplitud estacionaria ≈ <strong>${Ass} m</strong>.`;
+  }
+}
+
+function resetState() {
+  t = 0; x = x0; v = 0;
+  chartData.length = 0;
+  updateStats();
+  updatePhaseInfo();
+  document.getElementById('badge-ss').classList.remove('active');
+}
+
+function start() {
+  running = true;
+  lastTimestamp = null;
+  document.getElementById('btn-play').textContent = '⏸  Pausar';
+  animId = requestAnimationFrame(loop);
+}
+
+function stop() {
+  running = false;
+  document.getElementById('btn-play').textContent = '▶  Iniciar';
+  cancelAnimationFrame(animId);
+}
+
+// Skip to steady state: fast-integrate until transient has decayed
+function skipToSteadyState() {
+  if (!forceEnabled || !dampEnabled) {
+    alert('Para ir al estado estacionario se requiere activar tanto el amortiguamiento como la fuerza externa.');
+    return;
+  }
+  const wasRunning = running;
+  if (running) stop();
+
+  const tTarget = decayTime();
+  if (!isFinite(tTarget)) { alert('El amortiguamiento es demasiado pequeño para alcanzar el estado estacionario rápidamente. Aumenta b.'); return; }
+
+  // Fast integrate with large steps (accuracy not critical for display reset)
+  const bigDt = 0.01;
+  const steps = Math.ceil(tTarget / bigDt);
+  // Reset to equilibrium initial condition so the transient is minimised on skip
+  // (in practice the SS initial conditions are x=A*cos(phi), v=-A*w*sin(phi))
+  const bd = b;
+  const w0sq = k / m;
+  const A = steadyStateAmplitude();
+  const phi = Math.atan2(bd * fw, k - m * fw * fw);
+  // Start at the beginning of steady state cycle
+  x = A * Math.cos(phi);
+  v = -A * fw * Math.sin(phi);
+  t = tTarget;
+
+  chartData.length = 0;
+  // Record a couple of full driven periods for the chart
+  const driven_T = 2 * Math.PI / fw;
+  const record_steps = Math.ceil(3 * driven_T / dt);
+  for (let i = 0; i < record_steps; i++) {
+    stepOnce();
+  }
+
+  updateStats();
+  updatePhaseInfo();
+  drawSim();
+  drawChart();
+  if (wasRunning) start();
+}
+
+// ── Physics (RK4) ──────────────────────────────────────────────────────────────
+function accel(ti, xi, vi) {
+  const F  = forceEnabled ? F0 * Math.cos(fw * ti) : 0;
+  const bd = dampEnabled  ? b  : 0;
+  return (-k * xi - bd * vi + F) / m;
+}
+
+function stepOnce() {
+  const k1x = v,           k1v = accel(t,      x,           v);
+  const k2x = v+k1v*dt/2,  k2v = accel(t+dt/2, x+k1x*dt/2, v+k1v*dt/2);
+  const k3x = v+k2v*dt/2,  k3v = accel(t+dt/2, x+k2x*dt/2, v+k2v*dt/2);
+  const k4x = v+k3v*dt,    k4v = accel(t+dt,   x+k3x*dt,   v+k3v*dt);
+  x += dt/6*(k1x + 2*k2x + 2*k3x + k4x);
+  v += dt/6*(k1v + 2*k2v + 2*k3v + k4v);
+  t += dt;
+  chartData.push({ t, x });
+  if (chartData.length > MAX_PTS) chartData.shift();
+}
+
+let frameCount = 0;
+let lastTimestamp = null;
+function loop(timestamp) {
+  if (!running) return;
+
+  // Advance physics by exactly the real elapsed time (capped at 100ms)
+  if (lastTimestamp === null) lastTimestamp = timestamp;
+  const elapsed = Math.min((timestamp - lastTimestamp) / 1000, 0.1);
+  lastTimestamp = timestamp;
+
+  const steps = Math.max(1, Math.round(elapsed / dt));
+  for (let i = 0; i < steps; i++) stepOnce();
+
+  drawSim(); drawChart(); updateStats();
+  frameCount++;
+  if (frameCount % 60 === 0) updatePhaseInfo();
+  animId = requestAnimationFrame(loop);
+}
+
+// ── Draw Simulation ────────────────────────────────────────────────────────────
+function drawSim() {
+  const dpr = devicePixelRatio;
+  const W = simCanvas.width, H = simCanvas.height;
+  const ctx = simCtx;
+  ctx.clearRect(0, 0, W, H);
+
+  const wallW   = 36 * dpr;
+  const wallX   = wallW;
+  const centerY = H * 0.50;
+  const massSize = Math.min(54 * dpr, H * 0.22);
+  const eqX     = W * 0.58;
+  const clampX  = Math.max(-3.8, Math.min(3.8, x));
+  const massX   = eqX + clampX * W * 0.085;
+  const massLeft = massX - massSize / 2;
+  const massTop  = centerY - massSize / 2;
+  const floorY   = centerY + massSize / 2 + 6 * dpr;
+
+  // ── Ground ──
+  ctx.fillStyle = '#e0dbd0';
+  ctx.fillRect(wallX, floorY, W - wallX, H - floorY);
+  ctx.strokeStyle = '#c0b8aa';
+  ctx.lineWidth = 1.5;
+  for (let hx = wallX; hx < W + 20*dpr; hx += 22*dpr) {
+    ctx.beginPath(); ctx.moveTo(hx, floorY); ctx.lineTo(hx - 15*dpr, floorY + 12*dpr); ctx.stroke();
+  }
+  ctx.strokeStyle = '#a8a098'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(wallX, floorY); ctx.lineTo(W, floorY); ctx.stroke();
+
+  // ── Wall ──
+  ctx.fillStyle = '#d0c8bc';
+  ctx.fillRect(0, H * 0.1, wallW, H * 0.82);
+  ctx.strokeStyle = '#a8a090'; ctx.lineWidth = 1.5;
+  for (let wy = H * 0.1; wy < H * 0.92; wy += 20*dpr) {
+    ctx.beginPath(); ctx.moveTo(0, wy); ctx.lineTo(wallW, wy + 15*dpr); ctx.stroke();
+  }
+  ctx.fillStyle = '#c0b8ac';
+  ctx.fillRect(wallW - 6*dpr, H*0.1, 6*dpr, H*0.82);
+  ctx.strokeStyle = '#908880'; ctx.lineWidth = 1;
+  ctx.strokeRect(wallW - 6*dpr, H*0.1, 6*dpr, H*0.82);
+
+  // ── Damper (above spring, parallel) ──
+  const damperY = centerY - massSize * 0.58;
+  if (dampEnabled && b > 0) {
+    drawDamper(ctx, wallX, massLeft, damperY, dpr);
+  }
+
+  // ── Spring ──
+  drawSpring(ctx, wallX, centerY, massLeft, centerY, 12, dpr);
+
+  // ── Equilibrium line ──
+  ctx.save();
+  ctx.setLineDash([5*dpr, 5*dpr]);
+  ctx.strokeStyle = '#b0a898'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(eqX, H*0.10); ctx.lineTo(eqX, massTop - 8*dpr); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(eqX, massTop + massSize + 8*dpr); ctx.lineTo(eqX, floorY - 2*dpr); ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle = '#a09080';
+  ctx.font = `${9*dpr}px JetBrains Mono, monospace`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+  ctx.fillText('x = 0', eqX, H*0.10 - 2*dpr);
+
+  // ── Mass shadow ──
+  ctx.fillStyle = 'rgba(0,0,0,0.09)';
+  ctx.fillRect(massLeft + 5*dpr, massTop + 5*dpr, massSize, massSize);
+
+  // ── Mass fill ──
+  ctx.fillStyle = '#dce8f8';
+  ctx.fillRect(massLeft, massTop, massSize, massSize);
+  const sheen = ctx.createLinearGradient(massLeft, massTop, massLeft, massTop + massSize);
+  sheen.addColorStop(0,    'rgba(255,255,255,0.52)');
+  sheen.addColorStop(0.35, 'rgba(255,255,255,0.06)');
+  sheen.addColorStop(1,    'rgba(0,0,0,0.05)');
+  ctx.fillStyle = sheen;
+  ctx.fillRect(massLeft, massTop, massSize, massSize);
+  ctx.strokeStyle = '#2563a8'; ctx.lineWidth = 2.5*dpr;
+  ctx.strokeRect(massLeft, massTop, massSize, massSize);
+
+  // Label
+  ctx.fillStyle = '#2563a8';
+  ctx.font = `bold ${13*dpr}px Source Serif 4, serif`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('m', massX, centerY);
+
+  // ── Wheels ──
+  const wr = 6*dpr, botY = massTop + massSize;
+  for (const wx of [massX - massSize*0.28, massX + massSize*0.28]) {
+    ctx.beginPath(); ctx.arc(wx, botY + wr*0.6, wr, 0, Math.PI*2);
+    ctx.fillStyle = '#8090a8'; ctx.fill();
+    ctx.strokeStyle = '#2563a8'; ctx.lineWidth = 1.5*dpr; ctx.stroke();
+    ctx.beginPath(); ctx.arc(wx, botY + wr*0.6, 2*dpr, 0, Math.PI*2);
+    ctx.fillStyle = '#2563a8'; ctx.fill();
+  }
+
+  // ── Force arrow ──
+  if (forceEnabled) {
+    const Fval = F0 * Math.cos(fw * t);
+    const arrowLen = Fval * W * 0.024;
+    const arrowY = centerY - massSize * 0.14;
+    const startX = massX + massSize / 2;
+    if (Math.abs(arrowLen) > 3*dpr) {
+      drawArrow(ctx, startX, arrowY, startX + arrowLen, arrowY, '#c0392b', dpr);
+      ctx.fillStyle = '#c0392b';
+      ctx.font = `italic ${10*dpr}px Source Serif 4, serif`;
+      ctx.textAlign = arrowLen > 0 ? 'left' : 'right';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText('F(t)', startX + arrowLen + (arrowLen>0?5:-5)*dpr, arrowY - 4*dpr);
+    }
+  }
+
+  // ── Displacement annotation ──
+  if (Math.abs(clampX) > 0.08) {
+    const annY = massTop - 16*dpr;
+    ctx.save();
+    ctx.strokeStyle = '#6a6050'; ctx.lineWidth = 1*dpr;
+    ctx.setLineDash([4*dpr, 4*dpr]);
+    ctx.beginPath(); ctx.moveTo(eqX, annY); ctx.lineTo(massX, annY); ctx.stroke();
+    ctx.restore();
+    ctx.strokeStyle = '#6a6050'; ctx.lineWidth = 1.5*dpr;
+    ctx.beginPath(); ctx.moveTo(eqX, annY-5*dpr); ctx.lineTo(eqX, annY+5*dpr); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(massX, annY-5*dpr); ctx.lineTo(massX, annY+5*dpr); ctx.stroke();
+    ctx.fillStyle = '#4a4030';
+    ctx.font = `${9*dpr}px JetBrains Mono, monospace`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillText(`x = ${x.toFixed(2)} m`, (eqX+massX)/2, annY - 4*dpr);
+  }
+}
+
+function drawSpring(ctx, x1, y, x2, _y2, coils, dpr) {
+  const conn = (x2 - x1) * 0.07;
+  const cs = x1 + conn, ce = x2 - conn;
+  const amp = 13*dpr, segs = coils*2;
+
+  ctx.beginPath(); ctx.moveTo(x1, y); ctx.lineTo(cs, y);
+  for (let i = 0; i <= segs; i++) {
+    const f = i / segs;
+    const px = cs + f*(ce-cs);
+    const py = y + (i%2===0 ? -amp : amp);
+    ctx.lineTo(px, py);
+  }
+  ctx.lineTo(x2, y);
+  ctx.strokeStyle = '#2563a8'; ctx.lineWidth = 2.5*dpr; ctx.lineJoin = 'round'; ctx.stroke();
+}
+
+function drawDamper(ctx, x1, x2, y, dpr) {
+  const bxW = 28*dpr, bxH = 14*dpr;
+  const mid = x1 + (x2-x1)*0.5;
+  ctx.strokeStyle = '#8a5020'; ctx.lineWidth = 2*dpr;
+  ctx.beginPath(); ctx.moveTo(x1, y); ctx.lineTo(mid-bxW/2, y); ctx.stroke();
+  ctx.strokeRect(mid-bxW/2, y-bxH/2, bxW, bxH);
+  ctx.beginPath(); ctx.moveTo(mid+bxW*0.2, y-bxH/2-2*dpr); ctx.lineTo(mid+bxW*0.2, y+bxH/2+2*dpr); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(mid+bxW/2, y); ctx.lineTo(x2, y); ctx.stroke();
+  ctx.fillStyle = '#8a5020';
+  ctx.font = `italic ${9*dpr}px Source Serif 4, serif`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+  ctx.fillText('b', mid, y-bxH/2-4*dpr);
+}
+
+function drawArrow(ctx, x1, y1, x2, y2, color, dpr) {
+  const dx=x2-x1, dy=y2-y1, len=Math.sqrt(dx*dx+dy*dy);
+  if (len<2) return;
+  const angle=Math.atan2(dy,dx), headLen=10*dpr;
+  ctx.strokeStyle=color; ctx.fillStyle=color; ctx.lineWidth=2.5*dpr;
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-headLen*Math.cos(angle-0.35), y2-headLen*Math.sin(angle-0.35));
+  ctx.lineTo(x2-headLen*Math.cos(angle+0.35), y2-headLen*Math.sin(angle+0.35));
+  ctx.closePath(); ctx.fill();
+}
+
+// ── Draw Chart ─────────────────────────────────────────────────────────────────
+function drawChart() {
+  const dpr = devicePixelRatio;
+  const W = chartCanvas.width, H = chartCanvas.height;
+  const ctx = chartCtx;
+  const pad = { l:48*dpr, r:16*dpr, t:24*dpr, b:22*dpr };
+  ctx.clearRect(0,0,W,H);
+  const pw=W-pad.l-pad.r, ph=H-pad.t-pad.b;
+
+  ctx.fillStyle='#fefefe'; ctx.fillRect(pad.l,pad.t,pw,ph);
+
+  ctx.strokeStyle='#ede8e0'; ctx.lineWidth=1;
+  for (let i=1;i<4;i++) {
+    const gy=pad.t+ph*i/4;
+    ctx.beginPath(); ctx.moveTo(pad.l,gy); ctx.lineTo(pad.l+pw,gy); ctx.stroke();
+  }
+  ctx.strokeStyle='#c0b8ac'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(pad.l,pad.t+ph/2); ctx.lineTo(pad.l+pw,pad.t+ph/2); ctx.stroke();
+  ctx.strokeStyle='#d8d0c4'; ctx.lineWidth=1;
+  ctx.strokeRect(pad.l,pad.t,pw,ph);
+
+  if (chartData.length<2) return;
+
+  let maxAbs=0.1;
+  chartData.forEach(d=>{ if(Math.abs(d.x)>maxAbs) maxAbs=Math.abs(d.x); });
+  maxAbs = Math.max(maxAbs * 1.15, 0.5);
+
+  const tStart=chartData[0].t, tEnd=chartData[chartData.length-1].t;
+  const tRange=tEnd-tStart||1;
+
+  const toX = ti => pad.l + (ti-tStart)/tRange*pw;
+  const toY = xi => pad.t + ph/2 - (xi/maxAbs)*ph/2;
+
+  // filled area
+  ctx.beginPath();
+  ctx.moveTo(toX(chartData[0].t), pad.t+ph/2);
+  chartData.forEach(d => ctx.lineTo(toX(d.t), toY(d.x)));
+  ctx.lineTo(toX(chartData[chartData.length-1].t), pad.t+ph/2);
+  ctx.closePath();
+  ctx.fillStyle='rgba(37,99,168,0.08)'; ctx.fill();
+
+  // line
+  ctx.beginPath();
+  chartData.forEach((d,i) => i===0 ? ctx.moveTo(toX(d.t),toY(d.x)) : ctx.lineTo(toX(d.t),toY(d.x)));
+  ctx.strokeStyle='#2563a8'; ctx.lineWidth=2*dpr; ctx.lineJoin='round'; ctx.stroke();
+
+  // current dot
+  const last=chartData[chartData.length-1];
+  ctx.beginPath(); ctx.arc(toX(last.t),toY(last.x),4*dpr,0,Math.PI*2);
+  ctx.fillStyle='#c0392b'; ctx.fill();
+
+  // Y labels
+  ctx.fillStyle='#9a8e80';
+  ctx.font=`${9*dpr}px JetBrains Mono, monospace`;
+  ctx.textAlign='right'; ctx.textBaseline='middle';
+  ctx.fillText(`+${maxAbs.toFixed(1)}`, pad.l-4, pad.t);
+  ctx.fillText('0', pad.l-4, pad.t+ph/2);
+  ctx.fillText(`−${maxAbs.toFixed(1)}`, pad.l-4, pad.t+ph);
+
+  // X label
+  ctx.textAlign='right'; ctx.textBaseline='top';
+  ctx.fillText(`t = ${tEnd.toFixed(1)} s`, pad.l+pw, pad.t+ph+3);
+
+  // Etiqueta eje Y
+  ctx.save();
+  ctx.translate(pad.l-36*dpr, pad.t+ph/2);
+  ctx.rotate(-Math.PI/2);
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('x (m)', 0, 0);
+  ctx.restore();
+}
+
+// ── Stats ──────────────────────────────────────────────────────────────────────
+function updateStats() {
+  document.getElementById('st-x').textContent  = x.toFixed(3) + ' m';
+  document.getElementById('st-v').textContent  = v.toFixed(3) + ' m/s';
+  document.getElementById('st-ke').textContent = (0.5*m*v*v).toFixed(3) + ' J';
+  document.getElementById('st-pe').textContent = (0.5*k*x*x).toFixed(3) + ' J';
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────────
+resetState();
+updateOmega();
+updateStats();
+</script>
+</body>
+</html>

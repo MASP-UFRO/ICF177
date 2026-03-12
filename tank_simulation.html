@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tanque de Torricelli — Orificio Perfecto</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #e8f2ff;
+    --panel: #ffffff;
+    --border: #c5d8f0;
+    --accent: #0055cc;
+    --accent2: #0099ee;
+    --water1: #1a88ee;
+    --water2: #0055bb;
+    --text: #0d1f33;
+    --dim: #557090;
+    --gold: #cc6600;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: linear-gradient(150deg, #ddeeff 0%, #eaf3ff 60%, #dde8ff 100%);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 28px 14px 48px;
+  }
+
+  header { text-align: center; margin-bottom: 28px; }
+
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(2.2rem, 5vw, 3.4rem);
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .subtitle {
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--accent2);
+    font-size: 0.70rem;
+    letter-spacing: 0.22em;
+    margin-top: 5px;
+  }
+
+  .badge {
+    display: inline-block;
+    background: var(--accent);
+    color: #fff;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.14em;
+    padding: 3px 11px;
+    border-radius: 20px;
+    margin-top: 7px;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 290px 1fr;
+    gap: 20px;
+    width: 100%;
+    max-width: 940px;
+  }
+
+  @media (max-width: 680px) { .layout { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: var(--panel);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 18px;
+    box-shadow: 0 2px 18px rgba(0,80,180,0.09);
+  }
+
+  .ptitle {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.66rem;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .ptitle::before {
+    content: '';
+    width: 3px; height: 13px;
+    background: var(--accent);
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  .field { margin-bottom: 14px; }
+
+  label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.78rem;
+    color: var(--dim);
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+
+  label span {
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 0.80rem;
+  }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 100%; height: 5px;
+    background: #c8ddf2;
+    border-radius: 3px; outline: none; cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 1px 6px rgba(0,85,204,0.35);
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+  input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.3); }
+
+  hr { border: none; border-top: 1.5px solid var(--border); margin: 14px 0; }
+
+  .sgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+  .sbox {
+    background: #f0f7ff;
+    border: 1.5px solid #c5d8f0;
+    border-radius: 8px;
+    padding: 9px 11px;
+  }
+
+  .slabel {
+    font-size: 0.60rem;
+    color: #7090a8;
+    font-family: 'Share Tech Mono', monospace;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .sval {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.95rem;
+    color: var(--text);
+    margin-top: 2px;
+    font-weight: 700;
+  }
+  .sval.gold { color: var(--gold); }
+  .sval.blue { color: var(--accent); }
+
+  .btn {
+    width: 100%; padding: 12px;
+    border: none; border-radius: 9px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.05rem; letter-spacing: 0.12em;
+    cursor: pointer; transition: all 0.18s;
+    margin-top: 7px;
+  }
+  .btn-go {
+    background: var(--accent); color: #fff;
+    box-shadow: 0 3px 14px rgba(0,85,204,0.22);
+  }
+  .btn-go:hover { background: #003fa8; transform: translateY(-1px); }
+  .btn-go:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+  .btn-rst { background: #f0f4fa; color: var(--dim); border: 1.5px solid var(--border); }
+  .btn-rst:hover { background: #e0ecfa; color: var(--accent); }
+
+  .prog-wrap {
+    background: #ddeaf8;
+    border-radius: 5px; height: 7px;
+    margin-top: 12px; overflow: hidden;
+  }
+  .prog-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    border-radius: 5px;
+    transition: width 0.08s linear;
+    width: 100%;
+  }
+  .time-row {
+    display: flex; justify-content: space-between;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.68rem; color: var(--dim);
+    margin-top: 5px;
+  }
+
+  .done {
+    display: none;
+    text-align: center;
+    padding: 9px 0;
+    margin-top: 8px;
+    background: #fff8e8;
+    border: 1.5px solid #e8c060;
+    border-radius: 8px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.2rem;
+    letter-spacing: 0.1em;
+    color: var(--gold);
+  }
+
+  .right-col { display: flex; flex-direction: column; gap: 16px; }
+
+  .canvas-wrap {
+    background: #fff;
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 18px;
+    box-shadow: 0 2px 18px rgba(0,80,180,0.09);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 400px;
+  }
+
+  canvas { display: block; border-radius: 4px; }
+
+  .eq-box {
+    background: #fff;
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 18px;
+    box-shadow: 0 2px 18px rgba(0,80,180,0.06);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.76rem;
+    color: var(--dim);
+    line-height: 1.9;
+  }
+
+  .eq-box .et {
+    color: var(--accent);
+    font-size: 0.63rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .eq-box .ev { color: var(--text); font-weight: 700; }
+  .eq-box .ea { color: var(--accent2); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Tanque de Torricelli</h1>
+  <div class="subtitle">SIMULACIÓN HIDRODINÁMICA · BERNOULLI &amp; CONSERVACIÓN DE FLUJO</div>
+  <div class="badge">⬤ ORIFICIO PERFECTO · Cᵈ = 1.00</div>
+</header>
+
+<div class="layout">
+
+  <!-- LEFT: controls -->
+  <div>
+    <div class="panel">
+      <div class="ptitle">Dimensiones del Tanque</div>
+
+      <div class="field">
+        <label>Ancho del Tanque <span id="lw">1.0 m</span></label>
+        <input type="range" id="sl-w" min="0.3" max="3.0" step="0.1" value="1.0">
+      </div>
+      <div class="field">
+        <label>Altura del Tanque <span id="ld">1.0 m</span></label>
+        <input type="range" id="sl-d" min="0.3" max="3.0" step="0.1" value="1.0">
+      </div>
+      <div class="field">
+        <label>Profundidad del Tanque (∥) <span id="ll">1.0 m</span></label>
+        <input type="range" id="sl-l" min="0.3" max="3.0" step="0.1" value="1.0">
+      </div>
+
+      <hr>
+      <div class="ptitle">Orificio (Base del Tanque)</div>
+
+      <div class="field">
+        <label>Diámetro del Orificio <span id="lh">0.020 m</span></label>
+        <input type="range" id="sl-hole" min="0.005" max="0.15" step="0.005" value="0.02">
+      </div>
+
+      <hr>
+      <div class="sgrid">
+        <div class="sbox">
+          <div class="slabel">Volumen del Tanque</div>
+          <div class="sval" id="sv-vol">—</div>
+        </div>
+        <div class="sbox">
+          <div class="slabel">Área del Orificio</div>
+          <div class="sval" id="sv-area">—</div>
+        </div>
+        <div class="sbox">
+          <div class="slabel">Tiempo Total</div>
+          <div class="sval gold" id="sv-time">—</div>
+        </div>
+        <div class="sbox">
+          <div class="slabel">Velocidad de Salida</div>
+          <div class="sval blue" id="sv-vel">—</div>
+        </div>
+      </div>
+
+      <div class="prog-wrap"><div class="prog-bar" id="pbar"></div></div>
+      <div class="time-row">
+        <span id="telapsed">t = 0.00 s</span>
+        <span id="hleft">h = — m</span>
+      </div>
+
+      <div class="done" id="done">⬡ TANQUE VACÍO ⬡</div>
+
+      <button class="btn btn-go" id="btn-go">▶ INICIAR SIMULACIÓN</button>
+      <button class="btn btn-rst" id="btn-rst">↺ REINICIAR</button>
+    </div>
+
+    <div class="eq-box" style="margin-top:14px;">
+      <div class="et">Física — Orificio Perfecto (Cᵈ = 1)</div>
+      <div><span class="ev">Velocidad de salida:</span>  <span class="ea">v = √(2 g h)</span></div>
+      <div><span class="ev">EDO:</span>                   <span class="ea">A · dh/dt = −a · √(2 g h)</span></div>
+      <div><span class="ev">Tiempo analítico T:</span>    <span class="ea">T = (A / a) · √(2H / g)</span></div>
+      <div><span class="ev">h(t):</span>                  <span class="ea">h(t) = H · (1 − t/T)²</span></div>
+    </div>
+  </div>
+
+  <!-- RIGHT: simulation -->
+  <div class="right-col">
+    <div class="canvas-wrap">
+      <canvas id="cv" width="500" height="420"></canvas>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const G = 9.81;
+
+// DOM refs
+const slW    = document.getElementById('sl-w');
+const slD    = document.getElementById('sl-d');
+const slL    = document.getElementById('sl-l');
+const slHole = document.getElementById('sl-hole');
+const lw     = document.getElementById('lw');
+const ld     = document.getElementById('ld');
+const ll     = document.getElementById('ll');
+const lh     = document.getElementById('lh');
+const svVol  = document.getElementById('sv-vol');
+const svArea = document.getElementById('sv-area');
+const svTime = document.getElementById('sv-time');
+const svVel  = document.getElementById('sv-vel');
+const pbar   = document.getElementById('pbar');
+const telapsed = document.getElementById('telapsed');
+const hleft  = document.getElementById('hleft');
+const done   = document.getElementById('done');
+const btnGo  = document.getElementById('btn-go');
+const btnRst = document.getElementById('btn-rst');
+const cv     = document.getElementById('cv');
+const ctx    = cv.getContext('2d');
+
+let running = false, animId = null, lastTs = null;
+let h_cur = 1.0, t_elapsed = 0;
+
+function params() {
+  const W = +slW.value, H = +slD.value, L = +slL.value;
+  const d = +slHole.value;
+  const A = W * L;
+  const a = Math.PI * (d / 2) ** 2;
+  const T = (A / a) * Math.sqrt(2 * H / G); // Cd = 1
+  return { W, H, L, d, A, a, T };
+}
+
+function fmt(s) {
+  if (s < 60) return s.toFixed(2) + ' s';
+  if (s < 3600) return (s / 60).toFixed(3) + ' min';
+  return (s / 3600).toFixed(4) + ' hr';
+}
+
+function updateUI() {
+  const p = params();
+  lw.textContent = p.W.toFixed(1) + ' m';
+  ld.textContent = p.H.toFixed(1) + ' m';
+  ll.textContent = p.L.toFixed(1) + ' m';
+  lh.textContent = p.d.toFixed(3) + ' m';
+  svVol.textContent  = (p.A * p.H).toFixed(3) + ' m³';
+  svArea.textContent = (p.a * 10000).toFixed(4) + ' cm²';
+  svTime.textContent = fmt(p.T);
+  const v0 = Math.sqrt(2 * G * p.H);
+  svVel.textContent  = v0.toFixed(3) + ' m/s';
+}
+
+// ── DRAW ─────────────────────────────────────────────────────────────────────
+function draw(hFrac) {
+  const p   = params();
+  const CW  = cv.width, CH = cv.height;
+  ctx.clearRect(0, 0, CW, CH);
+
+  // Tank layout
+  const ML = 58, MR = 44, MT = 36, MB = 100;
+  const maxTW = CW - ML - MR;
+  const maxTH = CH - MT - MB;
+
+  const aspect = p.W / p.H;
+  let tW, tH;
+  if (aspect >= 1) {
+    tW = maxTW;
+    tH = Math.min(maxTH, tW / aspect);
+  } else {
+    tH = maxTH;
+    tW = Math.min(maxTW, tH * aspect);
+  }
+
+  const tX   = ML + (maxTW - tW) / 2;
+  const tY   = MT;
+  const tBot = tY + tH;
+  const now  = performance.now() / 1000;
+
+  // ── Water ──────────────────────────────────────────────────────────────────
+  if (hFrac > 0.001) {
+    const wH = tH * hFrac;
+    const wY = tBot - wH;
+
+    // Water body gradient (blue, vivid)
+    const wg = ctx.createLinearGradient(tX, wY, tX, tBot);
+    wg.addColorStop(0,   '#44aaff');
+    wg.addColorStop(0.5, '#1a77dd');
+    wg.addColorStop(1,   '#0044aa');
+    ctx.fillStyle = wg;
+    ctx.fillRect(tX + 3, wY + 8, tW - 6, wH - 8);
+
+    // Animated wave on top
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(tX + 3, wY, tW - 6, 16);
+    ctx.clip();
+    ctx.beginPath();
+    ctx.moveTo(tX + 3, wY + 8);
+    for (let x = tX + 3; x <= tX + tW - 3; x += 3) {
+      const y = wY + 8 + Math.sin(((x - tX) / 24) + now * 2.8) * 4.5;
+      ctx.lineTo(x, y);
+    }
+    ctx.lineTo(tX + tW - 3, wY + 16);
+    ctx.lineTo(tX + 3, wY + 16);
+    ctx.closePath();
+    const wg2 = ctx.createLinearGradient(0, wY, 0, wY + 16);
+    wg2.addColorStop(0, 'rgba(180,235,255,0.9)');
+    wg2.addColorStop(1, 'rgba(26,119,221,0)');
+    ctx.fillStyle = wg2;
+    ctx.fill();
+    ctx.restore();
+
+    // Left-wall sheen
+    const sheen = ctx.createLinearGradient(tX, 0, tX + tW * 0.22, 0);
+    sheen.addColorStop(0, 'rgba(255,255,255,0.16)');
+    sheen.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = sheen;
+    ctx.fillRect(tX + 3, wY + 8, tW * 0.22, wH - 8);
+
+    // Water surface dashed line
+    ctx.save();
+    ctx.setLineDash([5, 6]);
+    ctx.strokeStyle = 'rgba(200,238,255,0.6)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(tX + 4, wY + 8);
+    ctx.lineTo(tX + tW - 4, wY + 8);
+    ctx.stroke();
+    ctx.restore();
+
+    // ── h arrow (right side, orange) ──
+    const aX  = tX + tW + 16;
+    const aTop = wY + 8;
+    const aBot = tBot;
+
+    ctx.strokeStyle = '#dd7700';
+    ctx.lineWidth = 1.8;
+    ctx.beginPath(); ctx.moveTo(aX, aTop); ctx.lineTo(aX, aBot); ctx.stroke();
+    ctx.fillStyle = '#dd7700';
+    ctx.beginPath(); ctx.moveTo(aX, aTop); ctx.lineTo(aX - 4, aTop + 9); ctx.lineTo(aX + 4, aTop + 9); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(aX, aBot); ctx.lineTo(aX - 4, aBot - 9); ctx.lineTo(aX + 4, aBot - 9); ctx.fill();
+
+    ctx.fillStyle = '#dd7700';
+    ctx.font = 'bold 13px "DM Sans"';
+    ctx.textAlign = 'left';
+    ctx.fillText('h', aX + 6, (aTop + aBot) / 2 + 5);
+  }
+
+  // ── Tank walls ─────────────────────────────────────────────────────────────
+  const holeR = Math.max(5, Math.min(20, p.d * 950));
+  const holeCX = tX + tW / 2;
+
+  ctx.strokeStyle = '#0055cc';
+  ctx.lineWidth   = 4;
+  ctx.lineCap     = 'round';
+  ctx.lineJoin    = 'round';
+
+  // Left wall
+  ctx.beginPath(); ctx.moveTo(tX, tY); ctx.lineTo(tX, tBot); ctx.stroke();
+  // Right wall
+  ctx.beginPath(); ctx.moveTo(tX + tW, tY); ctx.lineTo(tX + tW, tBot); ctx.stroke();
+  // Bottom-left segment
+  ctx.beginPath(); ctx.moveTo(tX, tBot); ctx.lineTo(holeCX - holeR, tBot); ctx.stroke();
+  // Bottom-right segment
+  ctx.beginPath(); ctx.moveTo(holeCX + holeR, tBot); ctx.lineTo(tX + tW, tBot); ctx.stroke();
+
+  // Open-top ticks
+  ctx.strokeStyle = '#3377bb';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.moveTo(tX - 7, tY); ctx.lineTo(tX + 20, tY); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(tX + tW - 20, tY); ctx.lineTo(tX + tW + 7, tY); ctx.stroke();
+
+  // ── Hole at bottom center ──────────────────────────────────────────────────
+  // Clear wall gap so hole is visible
+  ctx.fillStyle = '#eaf3ff';
+  ctx.fillRect(holeCX - holeR, tBot - 3, holeR * 2, 8);
+
+  // Hole circle
+  ctx.beginPath();
+  ctx.arc(holeCX, tBot, holeR, 0, Math.PI * 2);
+  ctx.fillStyle = hFrac > 0.005 ? '#ee3300' : '#99aacc';
+  ctx.fill();
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Hole diameter label
+  ctx.fillStyle = '#445566';
+  ctx.font = '11px "Share Tech Mono"';
+  ctx.textAlign = 'center';
+  ctx.fillText(`⌀ ${(p.d * 100).toFixed(1)} cm`, holeCX, tBot + 20);
+
+  // ── Downward jet from hole ─────────────────────────────────────────────────
+  if (running && hFrac > 0.005) {
+    const v_exit = Math.sqrt(2 * G * h_cur);
+    const vNorm  = Math.min(v_exit / Math.sqrt(2 * G * p.H), 1);
+    const jetLen = 45 + vNorm * 85;
+
+    // Jet beam
+    const jg = ctx.createLinearGradient(holeCX, tBot, holeCX, tBot + jetLen);
+    jg.addColorStop(0, 'rgba(30,136,255,0.90)');
+    jg.addColorStop(1, 'rgba(30,136,255,0.00)');
+    ctx.strokeStyle = jg;
+    ctx.lineWidth   = holeR * 1.7;
+    ctx.lineCap     = 'round';
+    ctx.beginPath();
+    ctx.moveTo(holeCX, tBot + holeR);
+    ctx.lineTo(holeCX, tBot + jetLen);
+    ctx.stroke();
+
+    // Droplets
+    const count = Math.round(3 + vNorm * 6);
+    for (let i = 0; i < count; i++) {
+      const phase = ((now * (1.7 + i * 0.45) + i * 0.41) % 1);
+      const dy    = phase * jetLen * 1.5;
+      const dx    = Math.sin(phase * 7 + i * 2.3) * holeR * 0.55;
+      const alpha = (1 - phase) * 0.9;
+      const r     = Math.max(1.2, holeR * 0.55 * (1 - phase * 0.45));
+      ctx.beginPath();
+      ctx.arc(holeCX + dx, tBot + holeR + dy, r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(50,150,255,${alpha})`;
+      ctx.fill();
+    }
+
+    // Ripples at jet landing
+    const sY = tBot + jetLen + 12;
+    for (let r = 0; r < 3; r++) {
+      const rp = ((now * 2.6 + r * 0.34) % 1);
+      ctx.beginPath();
+      ctx.ellipse(holeCX, sY, rp * holeR * 4, rp * holeR * 1.1, 0, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(30,136,255,${(1 - rp) * 0.35})`;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+  }
+
+  // ── Dimension annotations ──────────────────────────────────────────────────
+  ctx.fillStyle = '#7090aa';
+  ctx.font = '11px "Share Tech Mono"';
+
+  // Width arrow (top)
+  const aY2 = tY - 16;
+  ctx.strokeStyle = '#7090aa';
+  ctx.lineWidth = 1.3;
+  ctx.beginPath(); ctx.moveTo(tX, aY2); ctx.lineTo(tX + tW, aY2); ctx.stroke();
+  ctx.fillStyle = '#7090aa';
+  ctx.beginPath(); ctx.moveTo(tX, aY2); ctx.lineTo(tX + 7, aY2 - 3); ctx.lineTo(tX + 7, aY2 + 3); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(tX + tW, aY2); ctx.lineTo(tX + tW - 7, aY2 - 3); ctx.lineTo(tX + tW - 7, aY2 + 3); ctx.fill();
+  ctx.textAlign = 'center';
+  ctx.fillText(`A = ${p.W.toFixed(1)} m`, tX + tW / 2, aY2 - 4);
+
+  // Height arrow (left)
+  const haX = tX - 18;
+  ctx.strokeStyle = '#7090aa';
+  ctx.lineWidth = 1.3;
+  ctx.beginPath(); ctx.moveTo(haX, tY); ctx.lineTo(haX, tBot); ctx.stroke();
+  ctx.fillStyle = '#7090aa';
+  ctx.beginPath(); ctx.moveTo(haX, tY); ctx.lineTo(haX - 3, tY + 7); ctx.lineTo(haX + 3, tY + 7); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(haX, tBot); ctx.lineTo(haX - 3, tBot - 7); ctx.lineTo(haX + 3, tBot - 7); ctx.fill();
+  ctx.save();
+  ctx.translate(haX - 10, (tY + tBot) / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.textAlign = 'center';
+  ctx.fillText(`H = ${p.H.toFixed(1)} m`, 0, 0); // altura
+  ctx.restore();
+
+  // Fill percentage inside water
+  if (hFrac > 0.12) {
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.font = `bold ${Math.min(36, tW * 0.14)}px "Bebas Neue"`;
+    ctx.textAlign = 'center';
+    ctx.fillText((hFrac * 100).toFixed(0) + '%', tX + tW / 2, tBot - 16);
+  }
+
+  ctx.textAlign = 'left';
+}
+
+// ── Simulation loop ───────────────────────────────────────────────────────────
+function step(ts) {
+  if (!running) return;
+  if (lastTs === null) lastTs = ts;
+  const dtReal = (ts - lastTs) / 1000;
+  lastTs = ts;
+
+  const p = params();
+  // Compress time so simulation completes in ~10 real seconds
+  const sf = p.T / 10.0;
+  const dt = dtReal * sf;
+
+  if (h_cur > 0) {
+    // dh/dt = -(a/A) * sqrt(2gh)   [Cd = 1]
+    const dhdt = -(p.a / p.A) * Math.sqrt(2 * G * h_cur);
+    h_cur = Math.max(0, h_cur + dhdt * dt);
+    t_elapsed += dt;
+  }
+
+  const hFrac = h_cur / p.H;
+  draw(hFrac);
+
+  pbar.style.width = ((1 - hFrac) * 100) + '%';
+  telapsed.textContent = 't = ' + fmt(t_elapsed);
+  hleft.textContent    = 'h = ' + h_cur.toFixed(3) + ' m';
+  svVel.textContent    = (h_cur > 0 ? Math.sqrt(2 * G * h_cur) : 0).toFixed(3) + ' m/s';
+
+  if (h_cur <= 0) {
+    running = false;
+    btnGo.disabled = false;
+    btnGo.textContent = '▶ INICIAR SIMULACIÓN';
+    done.style.display = 'block';
+    draw(0);
+    return;
+  }
+
+  animId = requestAnimationFrame(step);
+}
+
+// ── Controls ──────────────────────────────────────────────────────────────────
+function startPause() {
+  if (running) {
+    running = false;
+    cancelAnimationFrame(animId);
+    btnGo.textContent = '▶ REANUDAR';
+    return;
+  }
+  done.style.display = 'none';
+  const p = params();
+  if (h_cur <= 0) { h_cur = p.H; t_elapsed = 0; }
+  running = true;
+  lastTs  = null;
+  btnGo.textContent = '⏸ PAUSAR';
+  btnGo.disabled    = false;
+  animId = requestAnimationFrame(step);
+}
+
+function reset() {
+  running = false;
+  cancelAnimationFrame(animId);
+  const p = params();
+  h_cur = p.H; t_elapsed = 0; lastTs = null;
+  pbar.style.width      = '100%';
+  telapsed.textContent  = 't = 0.00 s';
+  hleft.textContent     = 'h = ' + p.H.toFixed(3) + ' m';
+  btnGo.textContent     = '▶ INICIAR SIMULACIÓN';
+  btnGo.disabled        = false;
+  done.style.display    = 'none';
+  updateUI();
+  draw(1);
+}
+
+[slW, slD, slL, slHole].forEach(s => s.addEventListener('input', () => {
+  updateUI();
+  if (!running) {
+    const p = params();
+    h_cur = p.H; t_elapsed = 0;
+    pbar.style.width     = '100%';
+    telapsed.textContent = 't = 0.00 s';
+    hleft.textContent    = 'h = ' + p.H.toFixed(3) + ' m';
+    draw(1);
+  }
+}));
+
+btnGo.addEventListener('click', startPause);
+btnRst.addEventListener('click', reset);
+
+updateUI();
+h_cur = params().H;
+draw(1);
+</script>
+</body>
+</html>

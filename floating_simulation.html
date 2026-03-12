@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulación de Flotación</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sky: #e8f4f8;
+    --water-top: #4db8e8;
+    --water-bot: #1a6b9a;
+    --water-line: #2196c4;
+    --sand: #f5e6c3;
+    --accent: #e05a2b;
+    --text: #1a2a3a;
+    --panel-bg: #ffffff;
+    --label: #4a6070;
+    --green: #27a96c;
+    --red: #e03030;
+    --border: #d0dce8;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--sky);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 24px;
+  }
+
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.2rem;
+    color: var(--text);
+    letter-spacing: -0.5px;
+    margin-bottom: 4px;
+  }
+
+  .subtitle {
+    color: var(--label);
+    font-size: 0.95rem;
+    font-weight: 300;
+    margin-bottom: 28px;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 24px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .panel {
+    background: var(--panel-bg);
+    border-radius: 16px;
+    padding: 24px;
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 20px rgba(30,60,90,0.06);
+  }
+
+  .panel h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.15rem;
+    margin-bottom: 20px;
+    color: var(--text);
+    border-bottom: 2px solid var(--sky);
+    padding-bottom: 10px;
+  }
+
+  .field-group {
+    margin-bottom: 18px;
+  }
+
+  .field-group label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--label);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 6px;
+  }
+
+  .field-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  input[type=number] {
+    flex: 1;
+    padding: 9px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.95rem;
+    color: var(--text);
+    background: var(--sky);
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+
+  input[type=number]:focus {
+    outline: none;
+    border-color: var(--water-top);
+  }
+
+  .unit {
+    font-size: 0.8rem;
+    color: var(--label);
+    white-space: nowrap;
+    font-family: 'DM Mono', monospace;
+    min-width: 60px;
+  }
+
+  .results {
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 2px solid var(--sky);
+  }
+
+  .results h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    margin-bottom: 14px;
+  }
+
+  .result-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    border-radius: 8px;
+    margin-bottom: 6px;
+    background: var(--sky);
+  }
+
+  .result-item .r-label {
+    font-size: 0.82rem;
+    color: var(--label);
+    font-weight: 500;
+  }
+
+  .result-item .r-val {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  .outcome-badge {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.92rem;
+    margin-top: 10px;
+    width: 100%;
+    text-align: center;
+  }
+
+  .outcome-badge.floats { background: #d4f5e7; color: #1a7a4a; }
+  .outcome-badge.sinks { background: #fde8e8; color: #a01818; }
+  .outcome-badge.neutral { background: #fff3e0; color: #b05a00; }
+
+  /* Simulation Canvas Area */
+  .sim-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  canvas#simCanvas {
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    display: block;
+    width: 100%;
+    box-shadow: 0 4px 20px rgba(30,60,90,0.08);
+    background: var(--sky);
+  }
+
+  .force-legend {
+    background: var(--panel-bg);
+    border-radius: 14px;
+    padding: 16px 20px;
+    border: 1px solid var(--border);
+    display: flex;
+    gap: 28px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: var(--label);
+  }
+
+  .legend-arrow {
+    width: 28px;
+    height: 8px;
+    border-radius: 4px;
+    position: relative;
+  }
+
+  .legend-arrow.gravity { background: var(--red); }
+  .legend-arrow.buoyancy { background: var(--green); }
+
+  .info-note {
+    font-size: 0.8rem;
+    color: #7a9ab0;
+    font-style: italic;
+  }
+
+  @media (max-width: 720px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div style="max-width:1100px;margin:0 auto">
+  <h1>Simulación de Flotación</h1>
+  <p class="subtitle">Explora la flotabilidad, la gravedad y el principio de Arquímedes de forma interactiva.</p>
+</div>
+
+<div class="layout">
+  <!-- Controls -->
+  <div>
+    <div class="panel">
+      <h2>Propiedades del Líquido</h2>
+      <div class="field-group">
+        <label>Densidad del líquido (ρ<sub>L</sub>)</label>
+        <div class="field-row">
+          <input type="number" id="liquidDensity" value="1000" min="1" step="1">
+          <span class="unit">kg/m³</span>
+        </div>
+        <div style="font-size:0.75rem;color:var(--label);margin-top:4px">Agua ≈ 1000 · Aceite ≈ 800 · Mercurio ≈ 13600</div>
+      </div>
+
+      <h2 style="margin-top:20px">Propiedades del Objeto</h2>
+      <div class="field-group">
+        <label>Densidad del objeto (ρ<sub>O</sub>)</label>
+        <div class="field-row">
+          <input type="number" id="objectDensity" value="700" min="1" step="1">
+          <span class="unit">kg/m³</span>
+        </div>
+        <div style="font-size:0.75rem;color:var(--label);margin-top:4px">Madera ≈ 700 · Hielo ≈ 917 · Acero ≈ 7800</div>
+      </div>
+      <div class="field-group">
+        <label>Área de sección transversal</label>
+        <div class="field-row">
+          <input type="number" id="objectArea" value="0.25" min="0.001" step="0.01">
+          <span class="unit">m²</span>
+        </div>
+      </div>
+      <div class="field-group">
+        <label>Altura del objeto</label>
+        <div class="field-row">
+          <input type="number" id="objectHeight" value="0.5" min="0.01" step="0.01">
+          <span class="unit">m</span>
+        </div>
+      </div>
+
+      <div class="results" id="results" style="display:none">
+        <h2>Resultados</h2>
+        <div class="result-item"><span class="r-label">Volumen del objeto</span><span class="r-val" id="rVolume">—</span></div>
+        <div class="result-item"><span class="r-label">Masa del objeto</span><span class="r-val" id="rMass">—</span></div>
+        <div class="result-item"><span class="r-label">Fuerza gravitacional (W)</span><span class="r-val" id="rWeight">—</span></div>
+        <div class="result-item"><span class="r-label">Fuerza de empuje (F<sub>b</sub>)</span><span class="r-val" id="rBuoyancy">—</span></div>
+        <div class="result-item"><span class="r-label">Fracción sumergida</span><span class="r-val" id="rSubFrac">—</span></div>
+        <div class="result-item"><span class="r-label">Fuerza neta</span><span class="r-val" id="rNet">—</span></div>
+        <div id="outcomeBadge"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Simulation -->
+  <div class="sim-wrap">
+    <div class="panel" style="padding:16px">
+      <canvas id="simCanvas" height="480"></canvas>
+    </div>
+    <div class="force-legend">
+      <div class="legend-item">
+        <div class="legend-arrow gravity"></div>
+        <span><strong>W</strong> — Peso (gravedad), hacia abajo desde el centro de masa</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-arrow buoyancy"></div>
+        <span><strong>Fᵦ</strong> — Empuje, hacia arriba desde el centro de masa</span>
+      </div>
+      <span class="info-note">La longitud de las flechas es proporcional a la magnitud de la fuerza. El tamaño del objeto varía con el área y la altura.</span>
+    </div>
+  </div>
+</div>
+
+<script>
+const GRAV = 9.81;
+
+function fmt(n, d) {
+  d = (d === undefined) ? 3 : d;
+  if (Math.abs(n) < 1e-9) return '0';
+  if (Math.abs(n) >= 1e5 || (Math.abs(n) < 0.001 && n !== 0)) return n.toExponential(2);
+  return n.toFixed(d);
+}
+
+function getInputs() {
+  return {
+    rhoL:   parseFloat(document.getElementById('liquidDensity').value),
+    rhoO:   parseFloat(document.getElementById('objectDensity').value),
+    area:   parseFloat(document.getElementById('objectArea').value),
+    height: parseFloat(document.getElementById('objectHeight').value)
+  };
+}
+
+function simulate() {
+  var inp = getInputs();
+  var rhoL = inp.rhoL, rhoO = inp.rhoO, area = inp.area, height = inp.height;
+
+  if (isNaN(rhoL)||isNaN(rhoO)||isNaN(area)||isNaN(height)||
+      rhoL<=0||rhoO<=0||area<=0||height<=0) {
+    return;
+  }
+
+  var volume = area * height;
+  var mass   = rhoO * volume;
+  var weight = mass * GRAV;
+
+  // submerged fraction at equilibrium = rhoO / rhoL
+  var subFrac = rhoO / rhoL;
+  var outcome, netForce;
+
+  if (subFrac < 1) {
+    outcome  = 'floats';
+    netForce = 0;
+  } else if (subFrac === 1) {
+    outcome  = 'neutral';
+    netForce = 0;
+    subFrac  = 1;
+  } else {
+    outcome  = 'sinks';
+    subFrac  = 1;
+    netForce = weight - rhoL * volume * GRAV;
+  }
+
+  var hSub     = subFrac * height;
+  var buoyancy = rhoL * area * hSub * GRAV;
+
+  // Update results panel
+  document.getElementById('rVolume').textContent   = fmt(volume)   + ' m\u00B3';
+  document.getElementById('rMass').textContent     = fmt(mass)     + ' kg';
+  document.getElementById('rWeight').textContent   = fmt(weight)   + ' N';
+  document.getElementById('rBuoyancy').textContent = fmt(buoyancy) + ' N';
+  document.getElementById('rSubFrac').textContent  = (subFrac*100).toFixed(1) + '%';
+  document.getElementById('rNet').textContent      = (netForce>=0?'+':'') + fmt(netForce) + ' N';
+
+  var badge = document.getElementById('outcomeBadge');
+  if (outcome === 'floats') {
+    badge.innerHTML = '<div class="outcome-badge floats">\u2726 El objeto flota</div>';
+  } else if (outcome === 'sinks') {
+    badge.innerHTML = '<div class="outcome-badge sinks">\u2193 El objeto se hunde</div>';
+  } else {
+    badge.innerHTML = '<div class="outcome-badge neutral">\u007E Flotabilidad neutra</div>';
+  }
+
+  document.getElementById('results').style.display = 'block';
+
+  drawCanvas({
+    area: area, height: height,
+    weight: weight, buoyancy: buoyancy,
+    subFrac: subFrac, outcome: outcome, netForce: netForce
+  });
+}
+
+// ---- drawing helpers ----
+
+function rrect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+// Draw a vertical arrow from (x,y) toward direction dir (+1=down, -1=up)
+// length in pixels; label and value shown at tip
+function drawArrow(ctx, x, y, length, dir, color, label, value) {
+  if (length < 6) return;
+  var headH = Math.min(14, length * 0.35);
+  var tailEnd = y + (length - headH) * dir;
+  var tip     = y + length * dir;
+
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.fillStyle   = color;
+  ctx.lineWidth   = 3.5;
+  ctx.lineCap     = 'round';
+
+  // Shaft
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x, tailEnd);
+  ctx.stroke();
+
+  // Arrowhead triangle
+  ctx.beginPath();
+  ctx.moveTo(x,     tip);
+  ctx.lineTo(x - 9, tailEnd);
+  ctx.lineTo(x + 9, tailEnd);
+  ctx.closePath();
+  ctx.fill();
+
+  // Label text at tip
+  var pad = 16 * dir;
+  ctx.font = 'bold 13px DM Sans, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillStyle = color;
+  ctx.fillText(label, x, tip + pad);
+  ctx.font = '11px DM Mono, monospace';
+  ctx.fillText(fmt(value, 1) + ' N', x, tip + pad + 15 * dir);
+  ctx.restore();
+}
+
+function drawCanvas(d) {
+  var canvas = document.getElementById('simCanvas');
+  var dpr    = window.devicePixelRatio || 1;
+  var CW     = canvas.offsetWidth  || 600;
+  var CH     = 500;
+
+  canvas.width  = CW * dpr;
+  canvas.height = CH * dpr;
+  var ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  // ---- Layout constants ----
+  var waterY  = CH * 0.40;   // water surface y
+  var sandY   = CH - 45;     // sand surface y
+  var usableH = sandY - waterY;  // available depth for submerged objects
+
+  // ---- Background: sky ----
+  var skyG = ctx.createLinearGradient(0, 0, 0, waterY);
+  skyG.addColorStop(0, '#cce8f5');
+  skyG.addColorStop(1, '#dff1fa');
+  ctx.fillStyle = skyG;
+  ctx.fillRect(0, 0, CW, waterY);
+
+  // ---- Water body ----
+  var waterG = ctx.createLinearGradient(0, waterY, 0, CH);
+  waterG.addColorStop(0,   '#4ec9f0');
+  waterG.addColorStop(0.4, '#1e9fd4');
+  waterG.addColorStop(1,   '#0d5f9a');
+  ctx.fillStyle = waterG;
+  ctx.fillRect(0, waterY, CW, CH - waterY);
+
+  // Water shimmer lines
+  ctx.save();
+  ctx.globalAlpha = 0.15;
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 2;
+  for (var i = 0; i < 9; i++) {
+    var wx = 20 + i * (CW - 40) / 8;
+    ctx.beginPath();
+    ctx.moveTo(wx - 18, waterY + 3);
+    ctx.quadraticCurveTo(wx, waterY - 4, wx + 18, waterY + 3);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // ---- Sand ----
+  var sandG = ctx.createLinearGradient(0, sandY, 0, CH);
+  sandG.addColorStop(0, '#dfc88a');
+  sandG.addColorStop(1, '#c8a850');
+  ctx.fillStyle = sandG;
+  ctx.beginPath();
+  ctx.moveTo(0, sandY);
+  for (var sx = 0; sx <= CW; sx += 25) {
+    ctx.lineTo(sx, sandY + Math.sin(sx * 0.15) * 5);
+  }
+  ctx.lineTo(CW, CH);
+  ctx.lineTo(0, CH);
+  ctx.closePath();
+  ctx.fill();
+
+  // ---- Object dimensions in pixels ----
+  // Map real dimensions to canvas pixels proportionally,
+  // capped so the box always fits nicely.
+  var maxBoxH = CH * 0.55;
+  var maxBoxW = CW * 0.38;
+  // Use area as a proxy for width (sqrt of area = side of equivalent square)
+  // Normalise against a reference: ref area=1 → refW=0.25*CW, ref height=1 → refH=0.35*CH
+  var refArea   = 1.0;
+  var refHeight = 1.0;
+  var refPixW   = CW * 0.25;
+  var refPixH   = CH * 0.35;
+  var rawPixW   = refPixW  * Math.sqrt(d.area   / refArea);
+  var rawPixH   = refPixH  * (d.height / refHeight);
+  // Clamp both dimensions while preserving aspect ratio
+  var scaleW    = rawPixW > maxBoxW ? maxBoxW / rawPixW : 1;
+  var scaleH    = rawPixH > maxBoxH ? maxBoxH / rawPixH : 1;
+  var scale     = Math.min(scaleW, scaleH, 1);
+  // Also scale up if box is very small
+  var scaleMin  = Math.min(CW * 0.08 / rawPixW, CH * 0.08 / rawPixH);
+  if (scaleMin > 1) scale = Math.min(scaleMin, scaleW > 1 ? 1 : scaleW, scaleH > 1 ? 1 : scaleH);
+  // final clamp
+  scale = Math.max(0.15, Math.min(scale, 3));
+
+  var pixW = Math.max(30, Math.min(rawPixW * scale, maxBoxW));
+  var pixH = Math.max(20, Math.min(rawPixH * scale, maxBoxH));
+
+  // ---- Object position ----
+  var cx      = CW * 0.5;
+  var objLeft = cx - pixW / 2;
+  var objRight= cx + pixW / 2;
+
+  // submerged pixels
+  var subPx   = pixH * d.subFrac;
+  var abovePx = pixH - subPx;
+
+  var objTop, objBot;
+  if (d.outcome === 'sinks') {
+    objBot = sandY - 2;
+    objTop = objBot - pixH;
+  } else {
+    objTop = waterY - abovePx;
+    objBot = waterY + subPx;
+  }
+
+  // Centre of mass (geometric centre of box)
+  var comX = cx;
+  var comY = (objTop + objBot) / 2;
+
+  // ---- Draw object (below-water portion tinted) ----
+  // 1. Full object fill
+  var objG = ctx.createLinearGradient(objLeft, objTop, objRight, objBot);
+  objG.addColorStop(0, '#f5dfa0');
+  objG.addColorStop(1, '#c89830');
+  ctx.fillStyle = objG;
+  rrect(ctx, objLeft, objTop, pixW, pixH, 7);
+  ctx.fill();
+
+  // 2. Water tint clipped to below waterY
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(0, waterY, CW, CH);
+  ctx.clip();
+  ctx.fillStyle = 'rgba(10,120,200,0.20)';
+  rrect(ctx, objLeft, objTop, pixW, pixH, 7);
+  ctx.fill();
+  ctx.restore();
+
+  // 3. Stroke outline
+  ctx.strokeStyle = '#9a7010';
+  ctx.lineWidth   = 2;
+  rrect(ctx, objLeft, objTop, pixW, pixH, 7);
+  ctx.stroke();
+
+  // ---- Centre of mass dot ----
+  ctx.beginPath();
+  ctx.arc(comX, comY, 5, 0, Math.PI * 2);
+  ctx.fillStyle = '#333';
+  ctx.fill();
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth   = 1.5;
+  ctx.stroke();
+
+  // ---- Force vectors from centre of mass ----
+  var maxForce    = Math.max(d.weight, d.buoyancy, 0.001);
+  var maxArrowPx  = Math.min(CH * 0.18, pixH * 0.9);
+
+  var gravPx = (d.weight   / maxForce) * maxArrowPx;
+  var buoyPx = (d.buoyancy / maxForce) * maxArrowPx;
+
+  // Weight: downward (+1) from CoM
+  drawArrow(ctx, comX, comY, gravPx, +1, '#d93030', 'W', d.weight);
+  // Buoyancy: upward (-1) from CoM
+  drawArrow(ctx, comX, comY, buoyPx, -1, '#0ea86a', 'F\u1D47', d.buoyancy);
+
+  // ---- Water surface dashed line ----
+  ctx.save();
+  ctx.setLineDash([9, 5]);
+  ctx.strokeStyle = 'rgba(255,255,255,0.75)';
+  ctx.lineWidth   = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(16, waterY);
+  ctx.lineTo(CW - 16, waterY);
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.font      = '11px DM Sans, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.92)';
+  ctx.textAlign = 'left';
+  ctx.fillText('superficie del agua', 20, waterY - 6);
+
+  // ---- Submerged fraction bracket on left of box ----
+  if (d.subFrac > 0.02 && d.outcome !== 'sinks') {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+    ctx.setLineDash([3, 4]);
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(objLeft - 8, waterY);
+    ctx.lineTo(objLeft - 8, objBot);
+    ctx.stroke();
+    ctx.restore();
+    ctx.font      = '10px DM Mono, monospace';
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.textAlign = 'right';
+    ctx.fillText((d.subFrac * 100).toFixed(1) + '% sumergido', objLeft - 12, waterY + subPx / 2 + 4);
+  }
+
+  // ---- Status label top-centre ----
+  ctx.font      = 'bold 13px DM Sans, sans-serif';
+  ctx.textAlign = 'center';
+  if (d.outcome === 'floats') {
+    ctx.fillStyle = '#0a8a50';
+    ctx.fillText('FLOTANDO  —  F\u1D47 = W', cx, 22);
+  } else if (d.outcome === 'sinks') {
+    ctx.fillStyle = '#c02020';
+    ctx.fillText('HUNDIÉNDOSE  —  W > F\u1D47  (neto: +' + fmt(d.netForce,1) + ' N\u2193)', cx, 22);
+  } else {
+    ctx.fillStyle = '#b06000';
+    ctx.fillText('FLOTABILIDAD NEUTRA  —  F\u1D47 = W', cx, 22);
+  }
+}
+
+// ---- Wire-up ----
+function runSim() { simulate(); }
+
+['liquidDensity','objectDensity','objectArea','objectHeight'].forEach(function(id) {
+  document.getElementById(id).addEventListener('input', runSim);
+  document.getElementById(id).addEventListener('change', runSim);
+});
+
+var resizeTimer;
+var ro = new ResizeObserver(function() {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(function() { simulate(); }, 50);
+});
+ro.observe(document.getElementById('simCanvas'));
+
+window.addEventListener('load', function() { simulate(); });
+</script>
+</body>
+</html>
