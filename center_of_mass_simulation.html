@@ -146,12 +146,23 @@
             justify-content: center;
         }
 
+        /*canvas {
+            border: 3px solid #667eea;
+            border-radius: 10px;
+            display: block;
+            cursor: crosshair;
+            background: #f8f9fa;
+        }*/
         canvas {
             border: 3px solid #667eea;
             border-radius: 10px;
             display: block;
             cursor: crosshair;
             background: #f8f9fa;
+            
+            /* Add these two lines to make the canvas responsive */
+            max-width: 100%; 
+            height: auto;    
         }
 
         .info-panel {
