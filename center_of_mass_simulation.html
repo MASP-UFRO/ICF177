@@ -63,7 +63,7 @@
             margin-bottom: 20px;
         }*/
         .controls-grid {
-        display: grid;
+            display: grid;
             /* Force 3 columns of equal width */
             grid-template-columns: repeat(3, 1fr); 
             gap: 20px;
@@ -84,7 +84,8 @@
 
         .input-row {
             display: grid;
-            grid-template-columns: 70px 1fr;
+            /*grid-template-columns: 70px 1fr;*/
+            grid-template-columns: minmax(auto, 70px) 1fr;
             gap: 8px;
             align-items: center;
             margin-bottom: 8px;
@@ -95,7 +96,16 @@
             color: #555;
         }
 
+        /*input[type="number"] {
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }*/
         input[type="number"] {
+            width: 100%;         /* Forces it to fill the grid column */
+            min-width: 0;        /* Overrides the browser's stubborn default width */
             padding: 8px 12px;
             border: 2px solid #ddd;
             border-radius: 8px;
