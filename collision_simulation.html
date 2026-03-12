@@ -450,10 +450,8 @@
             
             // Calculate radii based on mass (proportional to mass^(1/3) for 2D representation of 3D volume)
             const radius1 = Math.max(20, Math.min(50, 15 + Math.pow(params.m1, 1/3) * 5));
-            // const radius2 = Math.max(20, Math.min(50, 15 + Math.pow(params.m2, 1/3) * 5));
-            const radius1 = Math.max(20, Math.min(50, 15 + Math.pow(params.m1, 1/3) * 5));
-			
-			
+            const radius2 = Math.max(20, Math.min(50, 15 + Math.pow(params.m2, 1/3) * 5));
+            
             // Draw masses
             drawMass(params.x1, 140, radius1, '#667eea', params.v1, params.m1, 'Masa 1');
             drawMass(params.x2, 140, radius2, '#e74c3c', params.v2, params.m2, 'Masa 2');
