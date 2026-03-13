@@ -24,7 +24,7 @@
             background: white;
             border-radius: 16px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            padding: 15px;
+            padding: 30px;
         }
         
         h1 {
@@ -42,8 +42,8 @@
         .canvas-container {
             background: #f8f9fa;
             border-radius: 12px;
-            padding: 10px;
-            margin-bottom: 15px;
+            padding: 20px;
+            margin-bottom: 25px;
             border: 2px solid #e9ecef;
         }
         
@@ -63,7 +63,7 @@
         
         .control-group {
             background: #f8f9fa;
-            padding: 10px;
+            padding: 15px;
             border-radius: 8px;
             border: 1px solid #e9ecef;
         }
@@ -216,7 +216,7 @@
         <p class="subtitle">Explora colisiones elásticas, inelásticas y explosivas</p>
         
         <div class="canvas-container">
-            <canvas id="canvas" width="900" height="200"></canvas>
+            <canvas id="canvas" width="900" height="250"></canvas>
         </div>
         
         <div class="collision-type">
@@ -238,7 +238,7 @@
                         <span>Velocidad Inicial:</span>
                         <span class="value-display"><span id="v1Value">3.0</span> m/s</span>
                     </label>
-                    <input type="range" id="v1" min="-15" max="15" step="0.5" value="3">
+                    <input type="range" id="v1" min="-10" max="10" step="0.5" value="3">
                 </div>
             </div>
             
@@ -256,7 +256,7 @@
                         <span>Velocidad Inicial:</span>
                         <span class="value-display"><span id="v2Value">-2.0</span> m/s</span>
                     </label>
-                    <input type="range" id="v2" min="-15" max="15" step="0.5" value="-2">
+                    <input type="range" id="v2" min="-10" max="10" step="0.5" value="-2">
                 </div>
             </div>
         </div>
@@ -383,7 +383,7 @@
             // Draw shadow
             ctx.fillStyle = 'rgba(0,0,0,0.1)';
             ctx.beginPath();
-            ctx.ellipse(x, y + 75, radius * 0.8, radius * 0.3, 0, 0, Math.PI * 2);
+            ctx.ellipse(x, y + radius + 15, radius * 0.8, radius * 0.3, 0, 0, Math.PI * 2);
             ctx.fill();
             
             // Draw mass
@@ -427,14 +427,14 @@
             
             // Draw label
             ctx.fillStyle = '#333';
-            ctx.font = 'bold 18px sans-serif';
+            ctx.font = 'bold 14px sans-serif';
             ctx.textAlign = 'center';
             ctx.fillText(label, x, y - radius - 10);
             
             // Draw mass and velocity info
-            ctx.font = '15px sans-serif';
-            ctx.fillText(`${mass.toFixed(1)} kg`, x, y + 70);
-            ctx.fillText(`${velocity.toFixed(2)} m/s`, x, y + 90);
+            ctx.font = '11px sans-serif';
+            ctx.fillText(`${mass.toFixed(1)} kg`, x, y + 5);
+            ctx.fillText(`${velocity.toFixed(2)} m/s`, x, y + 18);
         }
         
         function draw() {
@@ -444,17 +444,17 @@
             ctx.strokeStyle = '#dee2e6';
             ctx.lineWidth = 2;
             ctx.beginPath();
-            ctx.moveTo(0, 110);
-            ctx.lineTo(canvas.width, 110);  
+            ctx.moveTo(0, 180);
+            ctx.lineTo(canvas.width, 180);
             ctx.stroke();
             
             // Calculate radii based on mass (proportional to mass^(1/3) for 2D representation of 3D volume)
-            const radius1 = Math.max(20, Math.min(50, 7.60 + Math.pow(params.m1, 1/3) * 15.6));
-            const radius2 = Math.max(20, Math.min(50, 7.60 + Math.pow(params.m2, 1/3) * 15.6));
+            const radius1 = Math.max(20, Math.min(50, 15 + Math.pow(params.m1, 1/3) * 5));
+            const radius2 = Math.max(20, Math.min(50, 15 + Math.pow(params.m2, 1/3) * 5));
             
             // Draw masses
-            drawMass(params.x1, 100, radius1, '#667eea', params.v1, params.m1, 'Masa 1');
-            drawMass(params.x2, 100, radius2, '#e74c3c', params.v2, params.m2, 'Masa 2');
+            drawMass(params.x1, 140, radius1, '#667eea', params.v1, params.m1, 'Masa 1');
+            drawMass(params.x2, 140, radius2, '#e74c3c', params.v2, params.m2, 'Masa 2');
             
             // Draw collision point indicator if currently colliding
             if (inCollision) {
@@ -495,8 +495,8 @@
             params.x2 += params.v2 * dt;
             
             // Check for collision - only collide if masses are approaching each other
-            const radius1 = Math.max(20, Math.min(50, 7.60 + Math.pow(params.m1, 1/3) * 15.6));
-            const radius2 = Math.max(20, Math.min(50, 7.60 + Math.pow(params.m2, 1/3) * 15.6));
+            const radius1 = Math.max(20, Math.min(50, 15 + Math.pow(params.m1, 1/3) * 5));
+            const radius2 = Math.max(20, Math.min(50, 15 + Math.pow(params.m2, 1/3) * 5));
             
             const overlapping = Math.abs(params.x2 - params.x1) <= (radius1 + radius2);
             
